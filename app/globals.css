@@ -1,0 +1,182 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light mode - white background with dark text */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 10%;
+
+    --card: 0 0% 98%;
+    --card-foreground: 0 0% 10%;
+
+    --popover: 0 0% 98%;
+    --popover-foreground: 0 0% 10%;
+
+    /* Purple as primary color */
+    --primary: 270 90% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Orange as secondary color */
+    --secondary: 30 100% 60%;
+    --secondary-foreground: 0 0% 10%;
+
+    /* Lighter orange as accent */
+    --accent: 20 100% 65%;
+    --accent-foreground: 0 0% 10%;
+
+    /* Darker purple as tertiary */
+    --tertiary: 280 80% 45%;
+    --tertiary-foreground: 0 0% 100%;
+
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 270 90% 60%;
+
+    --radius: 1rem;
+
+    /* Chart colors */
+    --chart-1: 270 90% 60%;
+    --chart-2: 30 100% 60%;
+    --chart-3: 20 100% 65%;
+    --chart-4: 280 80% 45%;
+    --chart-5: 290 70% 50%;
+  }
+
+  .dark {
+    /* Dark mode - dark background with light text */
+    --background: 0 0% 7%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 98%;
+
+    /* Purple as primary color - same in both modes */
+    --primary: 270 90% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Orange as secondary color - same in both modes */
+    --secondary: 30 100% 60%;
+    --secondary-foreground: 0 0% 10%;
+
+    /* Lighter orange as accent - same in both modes */
+    --accent: 20 100% 65%;
+    --accent-foreground: 0 0% 10%;
+
+    /* Darker purple as tertiary - same in both modes */
+    --tertiary: 280 80% 45%;
+    --tertiary-foreground: 0 0% 100%;
+
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 70%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 270 90% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Playful button styles */
+  .btn-bounce {
+    @apply transition-transform duration-200;
+  }
+  .btn-bounce:hover {
+    transform: translateY(-3px);
+  }
+  .btn-bounce:active {
+    transform: translateY(0);
+  }
+
+  /* Fun card styles */
+  .card-lift {
+    @apply transition-all duration-300;
+  }
+  .card-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 25px -5px rgba(var(--primary), 0.1), 0 10px 10px -5px rgba(var(--primary), 0.04);
+  }
+
+  /* Confetti animation */
+  @keyframes confetti-slow {
+    0% {
+      transform: translate3d(0, 0, 0) rotateX(0) rotateY(0);
+    }
+    100% {
+      transform: translate3d(25px, 105px, 0) rotateX(360deg) rotateY(180deg);
+    }
+  }
+
+  @keyframes confetti-medium {
+    0% {
+      transform: translate3d(0, 0, 0) rotateX(0) rotateY(0);
+    }
+    100% {
+      transform: translate3d(100px, 105px, 0) rotateX(100deg) rotateY(360deg);
+    }
+  }
+
+  @keyframes confetti-fast {
+    0% {
+      transform: translate3d(0, 0, 0) rotateX(0) rotateY(0);
+    }
+    100% {
+      transform: translate3d(-50px, 105px, 0) rotateX(10deg) rotateY(250deg);
+    }
+  }
+
+  /* Floating animation */
+  @keyframes float {
+    0% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+    100% {
+      transform: translateY(0px);
+    }
+  }
+
+  .float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  /* Pulse animation */
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  .pulse {
+    animation: pulse 2s ease-in-out infinite;
+  }
+}
