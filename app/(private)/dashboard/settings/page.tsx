@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -11,88 +11,99 @@ import { UserPreferencesForm } from "@/components/dashboard/user-preferences-for
 import { useTheme } from "next-themes"
 import { Moon, Sun, Monitor } from "lucide-react"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { savePref } from "./actions"
+
+
 
 export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(false)
   const { theme, setTheme } = useTheme()
+  const [preferences, setPreferences] = useState({
+    businessName: "",
+    businessType: "",
+    industry: "",
+    niche: "",
+    businessSize: "",
+    yearsInBusiness: "",
+    website: "",
+
+    targetAge: [],
+    targetGender: [],
+    targetLocation: "",
+    targetInterests: [],
+    targetPainPoints: [],
+
+    contentTone: "",
+    contentFormality: "",
+    contentLength: "",
+    contentFrequency: "",
+    contentEmojis: false,
+    contentHashtags: false,
+    contentCallToAction: false,
+
+    platforms: {
+      instagram: false,
+      facebook: false,
+      tiktok: false,
+      twitter: false,
+      linkedin: false,
+      youtube: false,
+    },
+
+    brandValues: [],
+    brandPersonality: "",
+    brandDescription: "",
+
+    competitorUrls: [],
+    favoriteContent: "",
+    contentToAvoid: ""
+  })
 
   const handleSaveProfile = () => {
-    setIsLoading(true);
-    const formData = new FormData();
-    formData.append("first_name", firstName);
-    formData.append("last_name", lastName);
-    changeNameAction(formData)
-      .then((response) => {
-        if (response.error) {
-          toast({
-            title: "Error",
-            description: response.error,
-            variant: "destructive",
-          });
-        }
-      })
-      .catch((error) => {
-        console.error("Error updating profile:", error);
-        toast({
-          title: "Error",
-          description:
-            "An unexpected error occurred while updating your profile.",
-          variant: "destructive",
-        });
-      });
-    toast({
-      title: "Profile updated",
-      description: "Your profile information has been updated successfully.",
-    });
-    setIsLoading(false);
-  };
-
-  const handleSavePassword = () => {
-    setIsLoading(true);
+    setIsLoading(true)
 
     // Simulate API call
     setTimeout(() => {
-      setIsLoading(false);
+      setIsLoading(false)
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been updated successfully.",
+      })
+    }, 1000)
+  }
+
+  const handleSavePassword = () => {
+    setIsLoading(true)
+
+    // Simulate API call
+    setTimeout(() => {
+      setIsLoading(false)
       toast({
         title: "Password updated",
         description: "Your password has been updated successfully.",
-      });
-    }, 1000);
-  };
+      })
+    }, 1000)
+  }
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold mb-2">Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your account settings and preferences.
-        </p>
+        <p className="text-muted-foreground">Manage your account settings and preferences.</p>
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
         <TabsList className="grid w-full grid-cols-4 rounded-full p-1 bg-muted">
-          <TabsTrigger
-            value="profile"
-            className="rounded-full data-[state=active]:bg-background"
-          >
+          <TabsTrigger value="profile" className="rounded-full data-[state=active]:bg-background">
             Profile
           </TabsTrigger>
-          <TabsTrigger
-            value="preferences"
-            className="rounded-full data-[state=active]:bg-background"
-          >
+          <TabsTrigger value="preferences" className="rounded-full data-[state=active]:bg-background">
             Content Preferences
           </TabsTrigger>
-          <TabsTrigger
-            value="appearance"
-            className="rounded-full data-[state=active]:bg-background"
-          >
+          <TabsTrigger value="appearance" className="rounded-full data-[state=active]:bg-background">
             Appearance
           </TabsTrigger>
-          <TabsTrigger
-            value="password"
-            className="rounded-full data-[state=active]:bg-background"
-          >
+          <TabsTrigger value="password" className="rounded-full data-[state=active]:bg-background">
             Password
           </TabsTrigger>
         </TabsList>
@@ -101,9 +112,7 @@ export default function SettingsPage() {
           <Card className="border-2 border-primary/20 rounded-xl shadow-md overflow-hidden">
             <CardHeader>
               <CardTitle>Profile Information</CardTitle>
-              <CardDescription>
-                Update your personal information and email address.
-              </CardDescription>
+              <CardDescription>Update your personal information and email address.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -111,18 +120,16 @@ export default function SettingsPage() {
                   <Label htmlFor="first-name">First name</Label>
                   <Input
                     id="first-name"
-                    defaultValue={firstName}
+                    defaultValue="John"
                     className="rounded-lg border-2 border-primary/20 focus-visible:ring-primary"
-                    onChange={(e) => setFirstName(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="last-name">Last name</Label>
                   <Input
                     id="last-name"
-                    defaultValue={lastName}
+                    defaultValue="Doe"
                     className="rounded-lg border-2 border-primary/20 focus-visible:ring-primary"
-                    onChange={(e) => setLastName(e.target.value)}
                   />
                 </div>
               </div>
@@ -132,8 +139,7 @@ export default function SettingsPage() {
                 <Input
                   id="email"
                   type="email"
-                  defaultValue={user?.email}
-                  disabled
+                  defaultValue="john.doe@example.com"
                   className="rounded-lg border-2 border-primary/20 focus-visible:ring-primary"
                 />
               </div>
@@ -158,9 +164,7 @@ export default function SettingsPage() {
           <Card className="border-2 border-primary/20 rounded-xl shadow-md overflow-hidden">
             <CardHeader>
               <CardTitle>Appearance</CardTitle>
-              <CardDescription>
-                Customize the look and feel of the application.
-              </CardDescription>
+              <CardDescription>Customize the look and feel of the application.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
@@ -168,49 +172,35 @@ export default function SettingsPage() {
                 <RadioGroup
                   defaultValue={theme}
                   onValueChange={(value) => {
-                    setTheme(value);
+                    setTheme(value)
                     toast({
                       title: "Theme updated",
                       description: `Theme has been set to ${value}.`,
-                    });
+                    })
                   }}
                   className="grid grid-cols-1 md:grid-cols-3 gap-4"
                 >
                   <div>
-                    <RadioGroupItem
-                      value="light"
-                      id="theme-light"
-                      className="peer sr-only"
-                      aria-label="Light theme"
-                    />
+                    <RadioGroupItem value="light" id="theme-light" className="peer sr-only" aria-label="Light theme" />
                     <Label
                       htmlFor="theme-light"
                       className="flex flex-col items-center justify-between rounded-xl border-2 border-primary/20 bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
                     >
                       <Sun className="mb-3 h-6 w-6" />
                       <div className="font-semibold">Light</div>
-                      <span className="text-xs text-muted-foreground">
-                        Light mode appearance
-                      </span>
+                      <span className="text-xs text-muted-foreground">Light mode appearance</span>
                     </Label>
                   </div>
 
                   <div>
-                    <RadioGroupItem
-                      value="dark"
-                      id="theme-dark"
-                      className="peer sr-only"
-                      aria-label="Dark theme"
-                    />
+                    <RadioGroupItem value="dark" id="theme-dark" className="peer sr-only" aria-label="Dark theme" />
                     <Label
                       htmlFor="theme-dark"
                       className="flex flex-col items-center justify-between rounded-xl border-2 border-primary/20 bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
                     >
                       <Moon className="mb-3 h-6 w-6" />
                       <div className="font-semibold">Dark</div>
-                      <span className="text-xs text-muted-foreground">
-                        Dark mode appearance
-                      </span>
+                      <span className="text-xs text-muted-foreground">Dark mode appearance</span>
                     </Label>
                   </div>
 
@@ -227,9 +217,7 @@ export default function SettingsPage() {
                     >
                       <Monitor className="mb-3 h-6 w-6" />
                       <div className="font-semibold">System</div>
-                      <span className="text-xs text-muted-foreground">
-                        Follow system preference
-                      </span>
+                      <span className="text-xs text-muted-foreground">Follow system preference</span>
                     </Label>
                   </div>
                 </RadioGroup>
@@ -242,9 +230,7 @@ export default function SettingsPage() {
           <Card className="border-2 border-primary/20 rounded-xl shadow-md overflow-hidden">
             <CardHeader>
               <CardTitle>Change Password</CardTitle>
-              <CardDescription>
-                Update your password to keep your account secure.
-              </CardDescription>
+              <CardDescription>Update your password to keep your account secure.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
@@ -287,5 +273,5 @@ export default function SettingsPage() {
         </TabsContent>
       </Tabs>
     </div>
-  );
+  )
 }
