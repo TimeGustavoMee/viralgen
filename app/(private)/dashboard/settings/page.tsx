@@ -19,6 +19,8 @@ import { useTheme } from "next-themes";
 import { Moon, Sun, Monitor } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useUserStore } from "@/stores/userStore";
+import { changeNameAction } from "./actions";
+import { useToast } from "@/hooks/use-toast";
 
 export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -26,6 +28,7 @@ export default function SettingsPage() {
   const [lastName, setLastName] = useState<string>("");
   const user = useUserStore((state) => state.user);
   const { theme, setTheme } = useTheme();
+  const { toast } = useToast();
 
   useEffect(() => {
     setFirstName(user?.user_metadata?.first_name);
@@ -34,15 +37,33 @@ export default function SettingsPage() {
 
   const handleSaveProfile = () => {
     setIsLoading(true);
-
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully.",
+    const formData = new FormData();
+    formData.append("first_name", firstName);
+    formData.append("last_name", lastName);
+    changeNameAction(formData)
+      .then((response) => {
+        if (response.error) {
+          toast({
+            title: "Error",
+            description: response.error,
+            variant: "destructive",
+          });
+        }
+      })
+      .catch((error) => {
+        console.error("Error updating profile:", error);
+        toast({
+          title: "Error",
+          description:
+            "An unexpected error occurred while updating your profile.",
+          variant: "destructive",
+        });
       });
-    }, 1000);
+    toast({
+      title: "Profile updated",
+      description: "Your profile information has been updated successfully.",
+    });
+    setIsLoading(false);
   };
 
   const handleSavePassword = () => {
