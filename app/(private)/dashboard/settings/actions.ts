@@ -1,12 +1,10 @@
-'use server';
+"use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { cookies } from 'next/headers';
-import { PreferencesData } from "./type";
+import { UpdatePreferencesData } from "./type";
 
 
 export async function changeNameAction(formData: FormData) {
-    const cookieStore = cookies();
 
     const supabase = await createClient()
 
@@ -35,7 +33,7 @@ export async function changeNameAction(formData: FormData) {
     return { success: true };
 }
 
-export async function savePref(data: PreferencesData) {
+export async function savePref(data: UpdatePreferencesData) {
     const supabase = await createClient();
 
     const {
@@ -159,97 +157,85 @@ export async function savePref(data: PreferencesData) {
     return { status: "success" };
 }
 
-// app/actions/getPref.ts
-"use server";
+export async function getPref(userId: string) {
 
+    try {
+        const supabase = await createClient();
+        // 2. Para cada tabela, faz select(*) WHERE user_id = userId
+        //    e retorna o primeiro (ou `null` se não houver)
+        const { data: bizRows, error: errBiz } = await supabase
+            .from("business_information")
+            .select("*")
+            .eq("user_id", userId)
+            .limit(1)
+            .single();
+        if (errBiz && errBiz.code !== "PGRST116") {
+            // PGRST116 = no rows found (single() falha com esse código). 
+            // Podemos ignorar esse erro e tratar como “não existe ainda”
+            throw new Error(`Erro ao buscar business_information: ${errBiz.message}`);
+        }
 
-export async function getPref() {
-    const supabase = await createClient();
+        const { data: targetRows, error: errTarget } = await supabase
+            .from("target_audience")
+            .select("*")
+            .eq("user_id", userId)
+            .limit(1)
+            .single();
+        if (errTarget && errTarget.code !== "PGRST116") {
+            throw new Error(`Erro ao buscar target_audience: ${errTarget.message}`);
+        }
 
-    // 1. Pega o usuário atual
-    const {
-        data: { user },
-        error: authError,
-    } = await supabase.auth.getUser();
-    if (authError) {
-        throw new Error(`Erro de autenticação: ${authError.message}`);
+        const { data: contentRows, error: errContent } = await supabase
+            .from("content_preferences")
+            .select("*")
+            .eq("user_id", userId)
+            .limit(1)
+            .single();
+        if (errContent && errContent.code !== "PGRST116") {
+            throw new Error(`Erro ao buscar content_preferences: ${errContent.message}`);
+        }
+
+        const { data: platformRows, error: errPlatform } = await supabase
+            .from("platform_preferences")
+            .select("*")
+            .eq("user_id", userId)
+            .limit(1)
+            .single();
+        if (errPlatform && errPlatform.code !== "PGRST116") {
+            throw new Error(`Erro ao buscar platform_preferences: ${errPlatform.message}`);
+        }
+
+        const { data: brandRows, error: errBrand } = await supabase
+            .from("brand_voice")
+            .select("*")
+            .eq("user_id", userId)
+            .limit(1)
+            .single();
+        if (errBrand && errBrand.code !== "PGRST116") {
+            throw new Error(`Erro ao buscar brand_voice: ${errBrand.message}`);
+        }
+
+        const { data: examplesRows, error: errExamples } = await supabase
+            .from("examples")
+            .select("*")
+            .eq("user_id", userId)
+            .limit(1)
+            .single();
+        if (errExamples && errExamples.code !== "PGRST116") {
+            throw new Error(`Erro ao buscar examples: ${errExamples.message}`);
+        }
+
+        // 3. Retorna um objeto com todas as seções (ou `null`/default se não existir)
+        return {
+            businessInfo: bizRows || null,
+            targetAudience: targetRows || null,
+            contentPreferences: contentRows || null,
+            platformPreferences: platformRows || null,
+            brandVoice: brandRows || null,
+            examples: examplesRows || null,
+        };
+    } catch (error) {
+        console.error("Erro ao buscar preferências:", error);
+        return { error: "Erro ao buscar preferências." };
     }
-    if (!user) {
-        throw new Error("Usuário não autenticado");
-    }
-    const userId = user.id;
-
-    // 2. Para cada tabela, faz select(*) WHERE user_id = userId
-    //    e retorna o primeiro (ou `null` se não houver)
-    const { data: bizRows, error: errBiz } = await supabase
-        .from("business_information")
-        .select("*")
-        .eq("user_id", userId)
-        .limit(1)
-        .single();
-    if (errBiz && errBiz.code !== "PGRST116") {
-        // PGRST116 = no rows found (single() falha com esse código). 
-        // Podemos ignorar esse erro e tratar como “não existe ainda”
-        throw new Error(`Erro ao buscar business_information: ${errBiz.message}`);
-    }
-
-    const { data: targetRows, error: errTarget } = await supabase
-        .from("target_audience")
-        .select("*")
-        .eq("user_id", userId)
-        .limit(1)
-        .single();
-    if (errTarget && errTarget.code !== "PGRST116") {
-        throw new Error(`Erro ao buscar target_audience: ${errTarget.message}`);
-    }
-
-    const { data: contentRows, error: errContent } = await supabase
-        .from("content_preferences")
-        .select("*")
-        .eq("user_id", userId)
-        .limit(1)
-        .single();
-    if (errContent && errContent.code !== "PGRST116") {
-        throw new Error(`Erro ao buscar content_preferences: ${errContent.message}`);
-    }
-
-    const { data: platformRows, error: errPlatform } = await supabase
-        .from("platform_preferences")
-        .select("*")
-        .eq("user_id", userId)
-        .limit(1)
-        .single();
-    if (errPlatform && errPlatform.code !== "PGRST116") {
-        throw new Error(`Erro ao buscar platform_preferences: ${errPlatform.message}`);
-    }
-
-    const { data: brandRows, error: errBrand } = await supabase
-        .from("brand_voice")
-        .select("*")
-        .eq("user_id", userId)
-        .limit(1)
-        .single();
-    if (errBrand && errBrand.code !== "PGRST116") {
-        throw new Error(`Erro ao buscar brand_voice: ${errBrand.message}`);
-    }
-
-    const { data: examplesRows, error: errExamples } = await supabase
-        .from("examples")
-        .select("*")
-        .eq("user_id", userId)
-        .limit(1)
-        .single();
-    if (errExamples && errExamples.code !== "PGRST116") {
-        throw new Error(`Erro ao buscar examples: ${errExamples.message}`);
-    }
-
-    // 3. Retorna um objeto com todas as seções (ou `null`/default se não existir)
-    return {
-        businessInfo: bizRows || null,
-        targetAudience: targetRows || null,
-        contentPreferences: contentRows || null,
-        platformPreferences: platformRows || null,
-        brandVoice: brandRows || null,
-        examples: examplesRows || null,
-    };
 }

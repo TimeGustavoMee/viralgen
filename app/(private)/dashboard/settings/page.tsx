@@ -19,15 +19,17 @@ import { useTheme } from "next-themes";
 import { Moon, Sun, Monitor } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useUserStore } from "@/stores/userStore";
-import { changeNameAction } from "./actions";
+import { changeNameAction, getPref } from "./actions";
 import { useToast } from "@/hooks/use-toast";
 
 export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [firstName, setFirstName] = useState<string>("");
   const [lastName, setLastName] = useState<string>("");
+  const [preferences, setPreferences] = useState<any | null>(null);
   const user = useUserStore((state) => state.user);
   const { theme, setTheme } = useTheme();
+  const [refresh, setRefresh] = useState<number>(0);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -35,6 +37,20 @@ export default function SettingsPage() {
     setLastName(user?.user_metadata?.last_name);
   }, [user]);
 
+  useEffect(() => {
+    const fetchPreferences = async () => {
+      if (user?.id) {
+        const prefData = await getPref(user.id);
+        if (!prefData.error) {
+          setPreferences(prefData);
+        } else {
+          setPreferences(null);
+          // Optionally, you can show a toast or handle the error here
+        }
+      }
+    };
+    fetchPreferences();
+  }, [user, refresh]);
   const handleSaveProfile = () => {
     setIsLoading(true);
     const formData = new FormData();
@@ -170,7 +186,10 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="preferences" className="mt-6">
-          <UserPreferencesForm />
+          <UserPreferencesForm
+            data={preferences}
+            onUptate={() => setRefresh((prev) => prev + 1)}
+          />
         </TabsContent>
 
         <TabsContent value="appearance" className="mt-6">
