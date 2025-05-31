@@ -8,9 +8,9 @@ CREATE TYPE target_age_enum AS ENUM (
 );
 
 CREATE TYPE target_gender_enum as ENUM (
-  'Male',
-  'Female',
-  'All'
+  'male',
+  'female',
+  'all'
 )
 
 CREATE TABLE target_audience (

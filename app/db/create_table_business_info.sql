@@ -1,45 +1,45 @@
 -- 1.1. Tipo para business_size
 CREATE TYPE business_size_enum AS ENUM (
-  'Solo entrepreneur',
-  'Small (2-10 employees)',
-  'Medium (11-250 employees)',
-  'Large (51+ employees)'
+  'solo_entrepreneur',
+  'small',
+  'medium',
+  'large'
 );
 
 -- 1.2. Tipo para years_in_business
 CREATE TYPE years_in_business_enum AS ENUM (
-  'Less than 1 year',
-  '1–3 years',
-  '4–10 years',
-  'More than 10 years'
+  'less_1_year',
+  '1_3_years',
+  '4_10_years',
+  'more_10_years'
 );
 
 CREATE TYPE industry_enum AS ENUM (
-  'Technology',
-  'Marketing',
-  'Healthcare',
-  'Finance',
-  'Education',
-  'Food & Beverage',
-  'Fashion',
-  'Travel',
-  'Fitness',
-  'Beauty',
-  'Other'
+  'technology',
+  'marketing',
+  'healthcare',
+  'finance',
+  'education',
+  'food & Beverage',
+  'fashion',
+  'travel',
+  'fitness',
+  'beauty',
+  'other'
 
 );
 
 CREATE TYPE type_of_business_enum AS ENUM (
-'Saas',
-'ECommerce',
-'Service Provider',
-'Agency',
-'Restaurant',
-'Retail Store',
-'Healthcare',
-'Education',
-'Non-Profit',
-'Other'
+'saas',
+'ecommerce',
+'service_provider',
+'agency',
+'restaurant',
+'retail_store',
+'healthcare',
+'education',
+'non_profit',
+'other'
 );
 
 CREATE TABLE business_information (

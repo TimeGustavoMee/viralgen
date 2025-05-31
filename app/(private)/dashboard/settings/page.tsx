@@ -11,10 +11,53 @@ import { UserPreferencesForm } from "@/components/dashboard/user-preferences-for
 import { useTheme } from "next-themes"
 import { Moon, Sun, Monitor } from "lucide-react"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { savePref } from "./actions"
+
+
 
 export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(false)
   const { theme, setTheme } = useTheme()
+  const [preferences, setPreferences] = useState({
+    businessName: "",
+    businessType: "",
+    industry: "",
+    niche: "",
+    businessSize: "",
+    yearsInBusiness: "",
+    website: "",
+
+    targetAge: [],
+    targetGender: [],
+    targetLocation: "",
+    targetInterests: [],
+    targetPainPoints: [],
+
+    contentTone: "",
+    contentFormality: "",
+    contentLength: "",
+    contentFrequency: "",
+    contentEmojis: false,
+    contentHashtags: false,
+    contentCallToAction: false,
+
+    platforms: {
+      instagram: false,
+      facebook: false,
+      tiktok: false,
+      twitter: false,
+      linkedin: false,
+      youtube: false,
+    },
+
+    brandValues: [],
+    brandPersonality: "",
+    brandDescription: "",
+
+    competitorUrls: [],
+    favoriteContent: "",
+    contentToAvoid: ""
+  })
 
   const handleSaveProfile = () => {
     setIsLoading(true)
