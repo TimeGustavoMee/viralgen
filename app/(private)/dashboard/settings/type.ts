@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+
+export const targetAgeEnum = z.enum(["18–24", "25–34", "35–44", "45–54", "55–64", "65+"]);
+export const targetGenderEnum = z.enum(["male", "female", "all"])
 export const preferencesSchema = z.object({
   businessName: z.string(),
   businessType: z.enum([
@@ -35,8 +38,8 @@ export const preferencesSchema = z.object({
 
   website: z.string(),
 
-  targetGender: z.array(z.enum(["male", "female", "all"])).min(1),
-  targetAge: z.array(z.enum(["18–24", "25–34", "35–44", "45–54", "55–64", "65+"])).min(1),
+  targetGender: z.array(targetGenderEnum).min(1),
+  targetAge: z.array(targetAgeEnum).min(1),
   targetLocation: z.string(),
   targetInterests: z.array(z.string()),
   targetPainPoints: z.array(z.string()),
@@ -88,3 +91,5 @@ export const updatePreferencesSchema = preferencesSchema.partial()
 
 export type UpdatePreferencesData = z.infer<typeof updatePreferencesSchema>;
 export type PreferencesData = z.infer<typeof preferencesSchema>;
+export type TargetAge = z.infer<typeof targetAgeEnum>;
+export type TargetGender = z.infer<typeof targetGenderEnum>;

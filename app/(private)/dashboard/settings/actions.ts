@@ -224,7 +224,6 @@ export async function getPref(userId: string) {
         if (errExamples && errExamples.code !== "PGRST116") {
             throw new Error(`Erro ao buscar examples: ${errExamples.message}`);
         }
-
         // 3. Retorna um objeto com todas as seções (ou `null`/default se não existir)
         return {
             businessInfo: bizRows || null,
