@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { RegisterFormData } from "./register/type";
 
 // reset password
 export async function resetPassword(formData: FormData, code: string) {
@@ -97,4 +98,29 @@ export async function getUserSession() {
     }
 
     return { status: 'success', user: data?.user };
+}
+
+export async function signup(data: RegisterFormData) {
+    const supabase = await createClient();
+
+    const email = data.email;
+    const password = data.password;
+
+    const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+            data: {
+                first_name: data.firstName,
+                last_name: data.lastName,
+            },
+        },
+    });
+
+
+    if (error) {
+        return { status: error.message };
+    }
+
+    return { status: 'success' };
 }
