@@ -1,20 +1,39 @@
 "use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { toast } from "@/components/ui/use-toast"
-import { UserPreferencesForm } from "@/components/dashboard/user-preferences-form"
-import { useTheme } from "next-themes"
-import { Moon, Sun, Monitor } from "lucide-react"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "@/components/ui/use-toast";
+import { UserPreferencesForm } from "@/components/dashboard/user-preferences-form";
+import { useTheme } from "next-themes";
+import { Moon, Sun, Monitor } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useUserStore } from "@/stores/userStore";
+import { changeNameAction } from "./actions";
+import { useToast } from "@/hooks/use-toast";
 
 export default function SettingsPage() {
-  const [isLoading, setIsLoading] = useState(false)
-  const { theme, setTheme } = useTheme()
+  const [isLoading, setIsLoading] = useState(false);
+  const [firstName, setFirstName] = useState<string>("");
+  const [lastName, setLastName] = useState<string>("");
+  const user = useUserStore((state) => state.user);
+  const { theme, setTheme } = useTheme();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    setFirstName(user?.user_metadata?.first_name);
+    setLastName(user?.user_metadata?.last_name);
+  }, [user]);
 
   const handleSaveProfile = () => {
     setIsLoading(true);
