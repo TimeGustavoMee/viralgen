@@ -18,8 +18,10 @@ import { Label } from "@/components/ui/label";
 import { CheckCircle2 } from "lucide-react";
 import { signup } from "@/app/(auth)/actions";
 import { RegisterFormData, registerSchema } from "./type";
+import { useToast } from "@/hooks/use-toast";
 
 export default function RegisterPage() {
+  const { toast } = useToast();
   const {
     register,
     handleSubmit,
@@ -36,12 +38,20 @@ export default function RegisterPage() {
           window.location.href = "/login";
         } else {
           // Handle error, e.g., show a notification or alert
-          alert(response.status);
+          toast({
+            title: "Registration Error",
+            description: response.status,
+            variant: "destructive",
+          });
         }
       })
       .catch((error) => {
         console.error("Registration error:", error);
-        alert("An unexpected error occurred. Please try again later.");
+        toast({
+          title: "Registration Error",
+          description: "An unexpected error occurred. Please try again later.",
+          variant: "destructive",
+        });
       });
   };
 

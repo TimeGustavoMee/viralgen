@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { Bell } from "lucide-react"
-import { MobileSidebar } from "@/components/dashboard/mobile-sidebar"
+import Link from "next/link";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { Bell } from "lucide-react";
+import { MobileSidebar } from "@/components/dashboard/mobile-sidebar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +13,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -21,8 +21,9 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/navigation-menu";
+import { cn } from "@/lib/utils";
+import { logout } from "@/hooks/use-logout";
 
 export function DashboardHeader() {
   return (
@@ -41,8 +42,8 @@ export function DashboardHeader() {
                 className="object-contain"
                 priority
                 onError={(e) => {
-                  const target = e.target as HTMLImageElement
-                  target.src = "/abstract-logo.png"
+                  const target = e.target as HTMLImageElement;
+                  target.src = "/abstract-logo.png";
                 }}
               />
             </div>
@@ -64,9 +65,12 @@ export function DashboardHeader() {
                             className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-primary/50 to-primary p-6 no-underline outline-none focus:shadow-md"
                             href="/dashboard/help"
                           >
-                            <div className="mt-4 mb-2 text-lg font-medium text-white">Help Center</div>
+                            <div className="mt-4 mb-2 text-lg font-medium text-white">
+                              Help Center
+                            </div>
                             <p className="text-sm leading-tight text-white/90">
-                              Get help with using ViralGen and learn how to create viral content.
+                              Get help with using ViralGen and learn how to
+                              create viral content.
                             </p>
                           </a>
                         </NavigationMenuLink>
@@ -79,9 +83,12 @@ export function DashboardHeader() {
                             target="_blank"
                             rel="noopener noreferrer"
                           >
-                            <div className="text-sm font-medium leading-none">Video Tutorials</div>
+                            <div className="text-sm font-medium leading-none">
+                              Video Tutorials
+                            </div>
                             <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                              Step-by-step video guides to help you get the most out of ViralGen.
+                              Step-by-step video guides to help you get the most
+                              out of ViralGen.
                             </p>
                           </a>
                         </NavigationMenuLink>
@@ -94,9 +101,12 @@ export function DashboardHeader() {
                             target="_blank"
                             rel="noopener noreferrer"
                           >
-                            <div className="text-sm font-medium leading-none">Content Strategy Guide</div>
+                            <div className="text-sm font-medium leading-none">
+                              Content Strategy Guide
+                            </div>
                             <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                              Learn how to create a winning content strategy for your business.
+                              Learn how to create a winning content strategy for
+                              your business.
                             </p>
                           </a>
                         </NavigationMenuLink>
@@ -109,9 +119,12 @@ export function DashboardHeader() {
                             target="_blank"
                             rel="noopener noreferrer"
                           >
-                            <div className="text-sm font-medium leading-none">Viral Content Templates</div>
+                            <div className="text-sm font-medium leading-none">
+                              Viral Content Templates
+                            </div>
                             <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                              Ready-to-use templates for creating viral content across different platforms.
+                              Ready-to-use templates for creating viral content
+                              across different platforms.
                             </p>
                           </a>
                         </NavigationMenuLink>
@@ -123,7 +136,7 @@ export function DashboardHeader() {
                   <Link href="/dashboard/help" legacyBehavior passHref>
                     <NavigationMenuLink
                       className={cn(
-                        "group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50",
+                        "group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50"
                       )}
                     >
                       Support
@@ -145,7 +158,10 @@ export function DashboardHeader() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                <Button
+                  variant="ghost"
+                  className="relative h-8 w-8 rounded-full"
+                >
                   <div className="relative w-8 h-8 rounded-full overflow-hidden">
                     <Image
                       src="/abstract-geometric-shapes.png"
@@ -154,8 +170,8 @@ export function DashboardHeader() {
                       sizes="32px"
                       className="object-cover"
                       onError={(e) => {
-                        const target = e.target as HTMLImageElement
-                        target.src = "/abstract-geometric-shapes.png"
+                        const target = e.target as HTMLImageElement;
+                        target.src = "/abstract-geometric-shapes.png";
                       }}
                     />
                   </div>
@@ -173,7 +189,9 @@ export function DashboardHeader() {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/login">Log out</Link>
+                  <button onClick={() => logout()} className="none">
+                    Logout
+                  </button>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -181,5 +199,5 @@ export function DashboardHeader() {
         </div>
       </div>
     </header>
-  )
+  );
 }
