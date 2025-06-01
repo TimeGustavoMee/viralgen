@@ -188,7 +188,7 @@ export default function SettingsPage() {
         <TabsContent value="preferences" className="mt-6">
           <UserPreferencesForm
             data={preferences}
-            onUptate={() => setRefresh((prev) => prev + 1)}
+            onUpdate={(prev) => prev + 1}
           />
         </TabsContent>
 
