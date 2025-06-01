@@ -14,7 +14,6 @@ export async function generateContentIdeas(
     count?: number
   }
 ): Promise<ContentIdea[]> {
-  // Monta o corpo da requisição para /api/openai no formato { prompt, options }
   const res = await fetch("/api/openai", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -26,7 +25,7 @@ export async function generateContentIdeas(
         tone: options.tone,
         audience: options.audience,
         count: options.count,
-        categorized: false, // força “não categorizado”
+        categorized: false, 
       },
     }),
   })
@@ -66,24 +65,17 @@ export async function generateContentIdeas(
   return parseResult.data
 }
 
-/**
- * Gera conteúdo categorizado a partir de um texto de prompt.
- *
- * @param prompt - texto que o usuário digitou
- *
- * @returns Promise<ContentCategory[]>
- */
+
 export async function generateCategorizedContent(
   prompt: string
 ): Promise<ContentCategory[]> {
-  // Monta o corpo da requisição para /api/openai no formato { prompt, options: { categorized: true } }
   const res = await fetch("/api/openai", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       prompt,
       options: {
-        categorized: true, // força modo categorizado
+        categorized: true,
       },
     }),
   })
@@ -105,19 +97,19 @@ export async function generateCategorizedContent(
   const json = await res.json()
   // Esperamos: { success: true, data: { categories: ContentCategory[] } }
   if (!json.success || !json.data) {
-    throw new Error("Resposta inesperada do servidor ao gerar categorias")
+    throw new Error("Unexpected server response when generating categorized content")
   }
 
   const rawCategories = json.data.categories
   if (!Array.isArray(rawCategories)) {
-    throw new Error("Resposta inesperada do servidor: “categories” não é um array")
+    throw new Error("Unexcpeted server response: “categories” is not an array")
   }
 
   // Valida com Zod cada categoria
   const parseResult = z.array(ContentCategorySchema).safeParse(rawCategories)
   if (!parseResult.success) {
-    console.error("Erro validando ContentCategory:", parseResult.error.format())
-    throw new Error("Servidor retornou formato inválido para ContentCategory")
+    console.error("Error validating", parseResult.error.format())
+    throw new Error("Server returned wrong formatted ContentCategory")
   }
 
   return parseResult.data

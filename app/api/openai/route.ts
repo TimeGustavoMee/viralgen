@@ -29,10 +29,8 @@ const promptOptionsBodySchema = z.object({
 
 const requestBodySchema = z.union([prefsBodySchema, promptOptionsBodySchema]);
 
-// Instancia o cliente oficial da OpenAI usando a variável de ambiente OPENAI_API_KEY
 const openai = new OpenAI();
 
-// Função auxiliar que chama a OpenAI e espera um JSON estruturado de volta
 async function generateFromPrompt(
   prompt: string,
   options: {
@@ -78,8 +76,6 @@ async function generateFromPrompt(
     }>;
   }>;
 }> {
-  // Vamos montar a mensagem de sistema + usuário para que o modelo retorne exatamente
-  // o JSON que esperamos (com "ideas" ou "categories", conforme options.categorized).
   const systemMessage = `
 Você é um assistente especializado em gerar ideias de conteúdo para mídias sociais e marketing digital.
 Você sempre responderá com JSON válido (sem explicações em texto), seguindo exatamente esta estrutura:
@@ -130,8 +126,6 @@ Se for requisitado com categorização (options.categorized = true):
 Não inclua nenhuma explicação fora desse JSON. Não coloque comentários, nem texto adicional.  
 `;
 
-  // Monta a instrução do usuário com base no prompt recebido e nas opções
-  // Podemos enriquecer a instrução incluindo platform, format, tone etc, se vierem.
   const {
     categorized = false,
     platform,
@@ -159,14 +153,13 @@ Não inclua nenhuma explicação fora desse JSON. Não coloque comentários, nem
     userPrompt += `\nPúblico-alvo: ${audience}.`;
   }
   if (count) {
-    userPrompt += `\nRetorne aproximadamente ${count} ${
+    userPrompt += `\nRetorne exatamente ${count} ${
       categorized ? "categorias" : "ideias"
     }.`;
   }
 
-  // Chamamos a OpenAI Chat Completion (você pode usar qualquer modelo que desejar)
   const chatResponse = await openai.chat.completions.create({
-    model: "gpt-4o-mini", // ou "gpt-4o", "gpt-4", conforme sua assinatura
+    model: "gpt-4o-mini", // ou "gpt-4o", "gpt-4", 
     messages: [
       { role: "system", content: systemMessage.trim() },
       { role: "user", content: userPrompt.trim() },
