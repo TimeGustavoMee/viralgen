@@ -11,7 +11,9 @@ export const targetAgeEnum = z.enum([
 ]);
 export const targetGenderEnum = z.enum(["male", "female", "all"]);
 
+
 // Reativamos “contentCallToAction” como boolean aqui:
+
 export const preferencesSchema = z.object({
   // === BUSINESS INFORMATION ===
   businessName: z.string(),
@@ -27,6 +29,7 @@ export const preferencesSchema = z.object({
     "non_profit",
     "other",
   ]),
+
   industry: z.enum([
     "technology",
     "marketing",
@@ -41,13 +44,16 @@ export const preferencesSchema = z.object({
     "other",
   ]),
   niche: z.string(),
+
   businessSize: z.enum(["solo_entrepreneur", "small", "medium", "large"]),
+
   yearsInBusiness: z.enum([
     "less_1_year",
     "1_3_years",
     "4_10_years",
     "more_10_years",
   ]),
+
   website: z.string(),
 
   // === TARGET AUDIENCE ===
@@ -102,9 +108,13 @@ export const preferencesSchema = z.object({
 });
 
 // Para atualização parcial (todos os campos opcionais)
+
 export const updatePreferencesSchema = preferencesSchema.partial();
+
 
 export type UpdatePreferencesData = z.infer<typeof updatePreferencesSchema>;
 export type PreferencesData = z.infer<typeof preferencesSchema>;
 export type TargetAge = z.infer<typeof targetAgeEnum>;
+
 export type TargetGender = z.infer<typeof targetGenderEnum>;
+
