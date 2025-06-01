@@ -5,7 +5,7 @@ import { ContentIdeaCard } from "@/components/dashboard/content-idea-card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { motion } from "framer-motion"
-import type { ContentCategory, ContentIdea } from "@/app/actions/generate-content"
+import { ContentCategory, ContentIdea } from "@/app/(private)/dashboard/chat/type"
 
 interface CategorizedContentProps {
   categories: ContentCategory[]
