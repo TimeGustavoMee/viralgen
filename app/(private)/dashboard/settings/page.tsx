@@ -36,8 +36,8 @@ export default function SettingsPage() {
 
   // Populate first & last name from user store
   useEffect(() => {
-    setFirstName(user?.user_metadata?.first_name || "");
-    setLastName(user?.user_metadata?.last_name || "");
+    setFirstName(user?.user_metadata?.first_name);
+    setLastName(user?.user_metadata?.last_name);
   }, [user]);
 
   // Fetch preferences from the server when user.id or refresh changes
