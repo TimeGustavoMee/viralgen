@@ -281,4 +281,4 @@ export async function getPref(userId: string) {
     console.error("Erro ao buscar preferências:", error);
     return { error: "Erro ao buscar preferências." };
   }
-
+}

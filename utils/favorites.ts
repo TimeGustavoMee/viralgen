@@ -1,7 +1,7 @@
-import type { ContentIdea } from "@/app/actions/generate-content"
-
+import type { ContentIdea } from "@/app/(private)/dashboard/chat/type"
 // Extended ContentIdea with collection and notes
 interface ExtendedContentIdea extends ContentIdea {
+  jd: string
   collection?: string
   notes?: string
   dateAdded: string
