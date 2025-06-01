@@ -1,13 +1,21 @@
+// app/(private)/dashboard/settings/type.ts
 import { z } from "zod";
 
-export const targetAgeEnum = z.enum(["18–24", "25–34", "35–44", "45–54", "55–64", "65+"]);
+export const targetAgeEnum = z.enum([
+  "18–24",
+  "25–34",
+  "35–44",
+  "45–54",
+  "55–64",
+  "65+",
+]);
 export const targetGenderEnum = z.enum(["male", "female", "all"]);
 
-//
-// Remove `content_call_to_action` from this schema.
-//
+
+// Reativamos “contentCallToAction” como boolean aqui:
 
 export const preferencesSchema = z.object({
+  // === BUSINESS INFORMATION ===
   businessName: z.string(),
   businessType: z.enum([
     "saas",
@@ -38,16 +46,24 @@ export const preferencesSchema = z.object({
   niche: z.string(),
 
   businessSize: z.enum(["solo_entrepreneur", "small", "medium", "large"]),
-  yearsInBusiness: z.enum(["less_1_year", "1_3_years", "4_10_years", "more_10_years"]),
+
+  yearsInBusiness: z.enum([
+    "less_1_year",
+    "1_3_years",
+    "4_10_years",
+    "more_10_years",
+  ]),
 
   website: z.string(),
 
+  // === TARGET AUDIENCE ===
   targetGender: z.array(targetGenderEnum).min(1),
   targetAge: z.array(targetAgeEnum).min(1),
   targetLocation: z.string(),
   targetInterests: z.array(z.string()),
   targetPainPoints: z.array(z.string()),
 
+  // === CONTENT PREFERENCES ===
   contentTone: z.enum([
     "professional",
     "casual",
@@ -66,11 +82,11 @@ export const preferencesSchema = z.object({
     "bi_weekly",
     "monthly",
   ]),
-
-  // Remove `contentCallToAction` field entirely:
   contentEmojis: z.boolean(),
   contentHashtags: z.boolean(),
+  contentCallToAction: z.boolean(), // <--- reativado
 
+  // === PLATFORM PREFERENCES ===
   platforms: z.object({
     instagram: z.boolean(),
     facebook: z.boolean(),
@@ -80,15 +96,18 @@ export const preferencesSchema = z.object({
     youtube: z.boolean(),
   }),
 
+  // === BRAND VOICE ===
   brandValues: z.array(z.string()),
   brandPersonality: z.string(),
   brandDescription: z.string(),
 
+  // === EXAMPLES ===
   competitorUrls: z.array(z.string()),
   favoriteContent: z.string(),
   contentToAvoid: z.string(),
 });
 
+// Para atualização parcial (todos os campos opcionais)
 
 export const updatePreferencesSchema = preferencesSchema.partial();
 
