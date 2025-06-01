@@ -13,13 +13,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "@/components/ui/use-toast";
 import { UserPreferencesForm } from "@/components/dashboard/user-preferences-form";
 import { useTheme } from "next-themes";
 import { Moon, Sun, Monitor } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useUserStore } from "@/stores/userStore";
-import { changeNameAction, getPref } from "./actions";
+import { changeNameAction, getPref, changePasswordAction } from "./actions";
 import { useToast } from "@/hooks/use-toast";
 
 export default function SettingsPage() {
@@ -27,9 +26,12 @@ export default function SettingsPage() {
   const [firstName, setFirstName] = useState<string>("");
   const [lastName, setLastName] = useState<string>("");
   const [preferences, setPreferences] = useState<any | null>(null);
+  const [actualPassword, setActualPassword] = useState<string>("");
+  const [newPassword, setNewPassword] = useState<string>("");
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
+
   const user = useUserStore((state) => state.user);
   const { theme, setTheme } = useTheme();
-  const [refresh, setRefresh] = useState<number>(0);
   const { toast } = useToast();
 
   // Populate first & last name from user store
@@ -55,7 +57,7 @@ export default function SettingsPage() {
       }
     }
     fetchPreferences();
-  }, [user, refresh]);
+  }, [user]);
 
   // Save profile's first/last name
   const handleSaveProfile = async () => {
@@ -80,16 +82,49 @@ export default function SettingsPage() {
     setIsLoading(false);
   };
 
-  const handleSavePassword = () => {
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+  // handler para salvar nova senha
+  const handleSavePassword = async () => {
+    if (newPassword !== confirmPassword) {
       toast({
-        title: "Password updated",
-        description: "Your password has been updated successfully.",
+        title: "Erro",
+        description: "Nova senha e confirmação não coincidem.",
+        variant: "destructive",
       });
-    }, 1000);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append("current_password", actualPassword);
+      formData.append("new_password", newPassword);
+
+      const response = await changePasswordAction(formData);
+      if ((response as any).error) {
+        toast({
+          title: "Erro",
+          description: (response as any).error,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Senha atualizada",
+          description: "Sua senha foi alterada com sucesso.",
+        });
+        // limpa campos
+        setActualPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      }
+    } catch (e) {
+      toast({
+        title: "Erro inesperado",
+        description: "Ocorreu um erro ao tentar atualizar a senha.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -299,6 +334,9 @@ export default function SettingsPage() {
                   id="current-password"
                   type="password"
                   className="rounded-lg border-2 border-primary/20 focus-visible:ring-primary"
+                  onChange={(e) => setActualPassword(e.target.value)}
+                  value={actualPassword}
+                  placeholder="Enter your current password"
                 />
               </div>
 
@@ -308,6 +346,9 @@ export default function SettingsPage() {
                   id="new-password"
                   type="password"
                   className="rounded-lg border-2 border-primary/20 focus-visible:ring-primary"
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  value={newPassword}
+                  placeholder="Enter your new password"
                 />
               </div>
 
@@ -317,6 +358,9 @@ export default function SettingsPage() {
                   id="confirm-password"
                   type="password"
                   className="rounded-lg border-2 border-primary/20 focus-visible:ring-primary"
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  value={confirmPassword}
+                  placeholder="Re-enter your new password"
                 />
               </div>
             </CardContent>

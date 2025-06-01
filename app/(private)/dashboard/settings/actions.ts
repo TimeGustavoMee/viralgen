@@ -3,30 +3,42 @@
 import { createClient } from "@/utils/supabase/server";
 import { UpdatePreferencesData } from "./type";
 
-export async function chagePasswordAction(formData: FormData) {
+// para atualizar senha
+export async function changePasswordAction(formData: FormData) {
   const supabase = await createClient();
 
-  const currentPassword = formData.get('current_password') as string;
-  const newPassword = formData.get('password') as string;
+  // Pega o e-mail do usuário logado
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+  if (userError || !user) {
+    return { error: "Usuário não autenticado." };
+  }
 
+  const currentPassword = formData.get("current_password") as string;
+  const newPassword = formData.get("new_password") as string;
+
+  // tenta re-autenticar com a senha atual
   const { error: signInError } = await supabase.auth.signInWithPassword({
-    email: (await supabase.auth.getUser()).data.user?.email as string,
+    email: user.email!,
     password: currentPassword,
   });
 
   if (signInError) {
-    return { error: 'Current password is incorrect.' };
+    return { error: "Senha atual incorreta." };
   }
 
+  // atualiza a senha
   const { error: updateError } = await supabase.auth.updateUser({
     password: newPassword,
   });
 
   if (updateError) {
-    return { error: 'Failed to update password. Please try again.' };
+    return { error: "Falha ao atualizar senha. Tente novamente." };
   }
 
-  return { success: 'Password updated successfully!' };
+  return { success: true };
 }
 
 export async function changeNameAction(formData: FormData) {
