@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect, useRef } from "react"
 import { Sparkles, Send, Zap, Loader2, X, LayoutGrid, List, Lightbulb } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -17,9 +16,8 @@ import { SuggestedPrompts } from "@/components/dashboard/suggested-prompts"
 import {
   generateContentIdeas,
   generateCategorizedContent,
-  type ContentIdea,
-  type ContentCategory,
-} from "@/app/actions/generate-content"
+} from "@/app/(private)/dashboard/chat/actions"
+import type { ContentIdea, ContentCategory } from "@/app/(private)/dashboard/chat/type"
 import { toggleFavorite, getFavorites } from "@/utils/favorites"
 
 export function ChatInterface() {
@@ -41,14 +39,12 @@ export function ChatInterface() {
   const [chatHistory, setChatHistory] = useState<Array<{ type: "user" | "assistant"; content: string }>>([])
   const chatEndRef = useRef<HTMLDivElement>(null)
 
-  // Load favorites from localStorage on component mount
+  // Load favorites and initial credits from localStorage on mount
   useEffect(() => {
     const loadCredits = () => {
       // In a real app, this would come from the backend
-      // For now, we'll just use a mock value
       setCreditsUsed(1)
     }
-
     loadCredits()
   }, [])
 
@@ -77,12 +73,10 @@ export function ChatInterface() {
         // Generate categorized content
         const categories = await generateCategorizedContent(prompt)
 
-        // Check if any of these ideas are already in favorites
+        // Mark favorites if present
         if (typeof window !== "undefined") {
           const favorites = getFavorites()
           const favoriteIds = new Set(favorites.map((fav) => fav.id))
-
-          // Mark ideas as favorites if they're in the favorites list
           const categoriesWithFavoriteStatus = categories.map((category) => ({
             ...category,
             ideas: category.ideas.map((idea) => ({
@@ -90,7 +84,6 @@ export function ChatInterface() {
               isFavorite: favoriteIds.has(idea.id),
             })),
           }))
-
           setCategorizedContent(categoriesWithFavoriteStatus)
         } else {
           setCategorizedContent(categories)
@@ -99,10 +92,9 @@ export function ChatInterface() {
         // Clear regular content ideas
         setContentIdeas([])
 
-        // Update chat history
+        // Update chat history final message
         setChatHistory((prev) => {
           const newHistory = [...prev]
-          // Replace the "thinking" message with the actual response
           newHistory[newHistory.length - 1] = {
             type: "assistant",
             content: `I've generated ${categories.length} categories of content ideas based on your prompt. Each category contains multiple ideas tailored to different goals.`,
@@ -110,8 +102,8 @@ export function ChatInterface() {
           return newHistory
         })
 
-        // Increment credits used (in a real app, this would be handled by the backend)
-        setCreditsUsed((prev) => prev + 4) // Using more credits for categorized content
+        // Increment credits used
+        setCreditsUsed((prev) => prev + 4)
       } else {
         // Generate regular content ideas
         const ideas = await generateContentIdeas(prompt, {
@@ -122,17 +114,14 @@ export function ChatInterface() {
           count: generationOptions.count,
         })
 
-        // Check if any of these ideas are already in favorites
+        // Mark favorites if present
         if (typeof window !== "undefined") {
           const favorites = getFavorites()
           const favoriteIds = new Set(favorites.map((fav) => fav.id))
-
-          // Mark ideas as favorites if they're in the favorites list
           const ideasWithFavoriteStatus = ideas.map((idea) => ({
             ...idea,
             isFavorite: favoriteIds.has(idea.id),
           }))
-
           setContentIdeas(ideasWithFavoriteStatus)
         } else {
           setContentIdeas(ideas)
@@ -141,10 +130,9 @@ export function ChatInterface() {
         // Clear categorized content
         setCategorizedContent([])
 
-        // Update chat history
+        // Update chat history final message
         setChatHistory((prev) => {
           const newHistory = [...prev]
-          // Replace the "thinking" message with the actual response
           newHistory[newHistory.length - 1] = {
             type: "assistant",
             content: `I've generated ${ideas.length} viral content ideas based on your prompt. Each idea includes detailed information to help you create engaging content.`,
@@ -152,7 +140,7 @@ export function ChatInterface() {
           return newHistory
         })
 
-        // Increment credits used (in a real app, this would be handled by the backend)
+        // Increment credits used
         setCreditsUsed((prev) => prev + 1)
       }
 
@@ -168,7 +156,6 @@ export function ChatInterface() {
       // Update chat history with error
       setChatHistory((prev) => {
         const newHistory = [...prev]
-        // Replace the "thinking" message with the error
         newHistory[newHistory.length - 1] = {
           type: "assistant",
           content: "I'm sorry, I encountered an error while generating content ideas. Please try again.",
@@ -183,19 +170,17 @@ export function ChatInterface() {
       })
     } finally {
       setIsLoading(false)
-      setPrompt("") // Clear the input after submission
+      setPrompt("") // Clear input
     }
   }
 
   const handleToggleFavorite = (idea: ContentIdea) => {
-    // Toggle favorite status and update localStorage
     const updatedIdea = toggleFavorite(idea)
 
-    // Update the UI
+    // Update UI
     if (contentIdeas.length > 0) {
       setContentIdeas((ideas) => ideas.map((i) => (i.id === idea.id ? updatedIdea : i)))
     }
-
     if (categorizedContent.length > 0) {
       setCategorizedContent((categories) =>
         categories.map((category) => ({
@@ -387,7 +372,11 @@ export function ChatInterface() {
                 </div>
               ) : categorizedContent.length > 0 ? (
                 <div className="overflow-y-auto max-h-[600px] pr-2">
-                  <CategorizedContent categories={categorizedContent} onToggleFavorite={handleToggleFavorite} />
+                  {/* <CategorizedContent
+                    categories={categorizedContent}
+                    onToggleFavorite={handleToggleFavorite}
+                    viewMode={viewMode}
+                  /> */}
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-[400px] text-center">
