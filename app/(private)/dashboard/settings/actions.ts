@@ -69,7 +69,8 @@ export async function changeNameAction(formData: FormData) {
   return { success: true };
 }
 
-
+// === savePref ===
+// Faz upsert em todas as tabelas de preferência (business_info, target_audience, content_preferences, platform_preferences, brand_voice, examples)
 export async function savePref(data: UpdatePreferencesData) {
   const supabase = await createClient();
 
@@ -97,6 +98,12 @@ export async function savePref(data: UpdatePreferencesData) {
     years_in_business: data.yearsInBusiness,
     website: data.website,
   };
+  const { error: errBusiness } = await supabase
+    .from("business_information")
+    .upsert(businessInfoRecord, { onConflict: "user_id" });
+  if (errBusiness) {
+    return { status: `error_business_info: ${errBusiness.message}` };
+  }
 
   // 2) Target Audience
   const targetAudienceRecord = {
@@ -107,12 +114,14 @@ export async function savePref(data: UpdatePreferencesData) {
     target_interests: data.targetInterests,
     target_pain_points: data.targetPainPoints,
   };
+  const { error: errTarget } = await supabase
+    .from("target_audience")
+    .upsert(targetAudienceRecord, { onConflict: "user_id" });
+  if (errTarget) {
+    return { status: `error_target_audience: ${errTarget.message}` };
+  }
 
-  // 3) Content Preferences
-  //    → Notice we must use the exact column names from your schema:
-  //      preferred_tone, preferred_formality, preferred_length, preferred_frequency,
-  //      use_emojis, use_hashtags, cta
-  //
+  // 3) Content Preferences (repare que agora incluímos “cta”)
   const contentPreferencesRecord = {
     user_id: userId,
     preferred_tone: data.contentTone,
@@ -121,16 +130,16 @@ export async function savePref(data: UpdatePreferencesData) {
     preferred_frequency: data.contentFrequency,
     use_emojis: data.contentEmojis,
     use_hashtags: data.contentHashtags,
-    // If you want to store “include CTA” in that `cta` column, restore this line:
-    // cta: data.contentCallToAction ?? false,
-    //
-    // If you have removed CTA entirely from your Zod schema and form,
-    // you can omit cta here (it will default to FALSE).
+    cta: data.contentCallToAction ?? false, // <--- reativado
   };
+  const { error: errContentPrefs } = await supabase
+    .from("content_preferences")
+    .upsert(contentPreferencesRecord, { onConflict: "user_id" });
+  if (errContentPrefs) {
+    return { status: `error_content_preferences: ${errContentPrefs.message}` };
+  }
 
   // 4) Platform Preferences
-  //    → The table has six boolean columns, not a JSON “platforms” field.
-  //    We must upsert each platform separately:
   const platformPreferencesRecord = {
     user_id: userId,
     instagram: data.platforms?.instagram || false,
@@ -140,6 +149,12 @@ export async function savePref(data: UpdatePreferencesData) {
     linkedin: data.platforms?.linkedin || false,
     youtube: data.platforms?.youtube || false,
   };
+  const { error: errPlatformPrefs } = await supabase
+    .from("platform_preferences")
+    .upsert(platformPreferencesRecord, { onConflict: "user_id" });
+  if (errPlatformPrefs) {
+    return { status: `error_platform_preferences: ${errPlatformPrefs.message}` };
+  }
 
   // 5) Brand Voice
   const brandVoiceRecord = {
@@ -148,6 +163,12 @@ export async function savePref(data: UpdatePreferencesData) {
     brand_personality: data.brandPersonality,
     brand_description: data.brandDescription,
   };
+  const { error: errBrandVoice } = await supabase
+    .from("brand_voice")
+    .upsert(brandVoiceRecord, { onConflict: "user_id" });
+  if (errBrandVoice) {
+    return { status: `error_brand_voice: ${errBrandVoice.message}` };
+  }
 
   // 6) Examples
   const examplesRecord = {
@@ -156,44 +177,6 @@ export async function savePref(data: UpdatePreferencesData) {
     favorite_content: data.favoriteContent,
     content_to_avoid: data.contentToAvoid,
   };
-
-  // Upsert each table in turn:
-
-  const { error: errBusiness } = await supabase
-    .from("business_information")
-    .upsert(businessInfoRecord, { onConflict: "user_id" });
-  if (errBusiness) {
-    return { status: `error_business_info: ${errBusiness.message}` };
-  }
-
-  const { error: errTarget } = await supabase
-    .from("target_audience")
-    .upsert(targetAudienceRecord, { onConflict: "user_id" });
-  if (errTarget) {
-    return { status: `error_target_audience: ${errTarget.message}` };
-  }
-
-  const { error: errContentPrefs } = await supabase
-    .from("content_preferences")
-    .upsert(contentPreferencesRecord, { onConflict: "user_id" });
-  if (errContentPrefs) {
-    return { status: `error_content_preferences: ${errContentPrefs.message}` };
-  }
-
-  const { error: errPlatformPrefs } = await supabase
-    .from("platform_preferences")
-    .upsert(platformPreferencesRecord, { onConflict: "user_id" });
-  if (errPlatformPrefs) {
-    return { status: `error_platform_preferences: ${errPlatformPrefs.message}` };
-  }
-
-  const { error: errBrandVoice } = await supabase
-    .from("brand_voice")
-    .upsert(brandVoiceRecord, { onConflict: "user_id" });
-  if (errBrandVoice) {
-    return { status: `error_brand_voice: ${errBrandVoice.message}` };
-  }
-
   const { error: errExamples } = await supabase
     .from("examples")
     .upsert(examplesRecord, { onConflict: "user_id" });

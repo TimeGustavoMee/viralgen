@@ -77,13 +77,13 @@ interface PrefsFromServer {
     target_pain_points: string[];
   } | null;
   contentPreferences: {
-    content_tone: string;
-    content_formality: string;
-    content_length: string;
-    content_frequency: string;
-    content_emojis: boolean;
-    content_hashtags: boolean;
-    // cta?: boolean;
+    preferred_tone: string;
+    preferred_formality: string;
+    preferred_length: string;
+    preferred_frequency: string;
+    use_emojis: boolean;
+    use_hashtags: boolean;
+    cta: boolean;
   } | null;
   platformPreferences: {
     instagram: boolean;
@@ -115,7 +115,7 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
     examples,
   } = data;
 
-  // Mapeia snake_case → camelCase
+  // → Mapeia o resultado “snake_case” do banco para os campos camelCase do form
   const mappedData: UpdatePreferencesData = {
     // === BUSINESS INFORMATION ===
     businessName: businessInfo?.business_name ?? "",
@@ -208,59 +208,36 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
     targetPainPoints: targetAudience?.target_pain_points ?? [],
 
     // === CONTENT PREFERENCES ===
-    contentTone: (
-      [
-        "professional",
-        "casual",
-        "funny",
-        "serious",
-        "inspirational",
-        "educational",
-        "conversational",
-      ] as const
-    ).includes(contentPreferences?.content_tone as any)
-      ? (contentPreferences?.content_tone as
-          | "professional"
-          | "casual"
-          | "funny"
-          | "serious"
-          | "inspirational"
-          | "educational"
-          | "conversational")
-      : undefined,
-    contentFormality: (
-      ["formal", "semi_formal", "casual", "very_casual"] as const
-    ).includes(contentPreferences?.content_formality as any)
-      ? (contentPreferences?.content_formality as
-          | "formal"
-          | "semi_formal"
-          | "casual"
-          | "very_casual")
-      : undefined,
-    contentLength: (["short", "medium", "long"] as const).includes(
-      contentPreferences?.content_length as any
-    )
-      ? (contentPreferences?.content_length as "short" | "medium" | "long")
-      : undefined,
-    contentFrequency: (
-      [
-        "daily",
-        "several_times_a_week",
-        "weekly",
-        "bi_weekly",
-        "monthly",
-      ] as const
-    ).includes(contentPreferences?.content_frequency as any)
-      ? (contentPreferences?.content_frequency as
-          | "daily"
-          | "several_times_a_week"
-          | "weekly"
-          | "bi_weekly"
-          | "monthly")
-      : undefined,
-    contentEmojis: contentPreferences?.content_emojis ?? false,
-    contentHashtags: contentPreferences?.content_hashtags ?? false,
-    // ** OMITIDO contentCallToAction **
+    contentTone: contentPreferences?.preferred_tone as
+      | "professional"
+      | "casual"
+      | "funny"
+      | "serious"
+      | "inspirational"
+      | "educational"
+      | "conversational"
+      | undefined,
+    contentFormality: contentPreferences?.preferred_formality as
+      | "formal"
+      | "semi_formal"
+      | "casual"
+      | "very_casual"
+      | undefined,
+    contentLength: contentPreferences?.preferred_length as
+      | "short"
+      | "medium"
+      | "long"
+      | undefined,
+    contentFrequency: contentPreferences?.preferred_frequency as
+      | "daily"
+      | "several_times_a_week"
+      | "weekly"
+      | "bi_weekly"
+      | "monthly"
+      | undefined,
+    contentEmojis: contentPreferences?.use_emojis ?? false,
+    contentHashtags: contentPreferences?.use_hashtags ?? false,
+    contentCallToAction: contentPreferences?.cta ?? false,
 
     // === PLATFORM PREFERENCES ===
     platforms: {
@@ -302,20 +279,27 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
   const [formProgress, setFormProgress] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // activeTab armazena qual “aba” (tabela) vamos salvar:
+  //   - businessInfo
+  //   - targetAudience
+  //   - contentPreferences
+  //   - platformPreferences
+  //   - brandVoice
+  //   - examples
   const [activeTab, setActiveTab] = useState<keyof PrefsFromServer>(
     contentPreferences ? "contentPreferences" : "businessInfo"
   );
 
-  // Quando `data` mudar, reseta o form
+  // Quando `data` (vinda de getPref) mudar, reseta o formulário
   useEffect(() => {
     reset(initialValues);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
-  // Calcula progresso
-  const allValues = watch();
+  // Calcula progresso de preenchimento
   useEffect(() => {
-    const prefs = allValues as UpdatePreferencesData;
+    const prefs = watch() as UpdatePreferencesData;
     const nonPlatformKeys = Object.keys(prefs).filter((k) => k !== "platforms");
     const platformKeys = prefs.platforms ? Object.keys(prefs.platforms) : [];
     const totalFields = nonPlatformKeys.length + platformKeys.length;
@@ -342,7 +326,7 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
       ? Math.min(100, Math.round((filledFields / totalFields) * 100))
       : 0;
     setFormProgress(progress);
-  }, [allValues]);
+  }, [watch()]);
 
   // Função unificada de submit
   const onSubmit = async (formData: UpdatePreferencesData) => {
@@ -350,7 +334,24 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
 
     try {
       if (activeTab === "contentPreferences") {
-        // Submete só Content Preferences
+        // 1) Validação mínima: garantir que campos obrigatórios de Content não estejam undefined
+        if (
+          !formData.contentTone ||
+          !formData.contentFormality ||
+          !formData.contentLength ||
+          !formData.contentFrequency
+        ) {
+          toast({
+            title: "Erro",
+            description:
+              "Preencha todos os campos obrigatórios de Content Preferences antes de salvar.",
+            variant: "destructive",
+          });
+          setIsSaving(false);
+          return;
+        }
+
+        // 2) Submete só Content Preferences (incluindo cta)
         const fd = new FormData();
         fd.append("preferred_tone", formData.contentTone!);
         fd.append("preferred_formality", formData.contentFormality!);
@@ -358,8 +359,7 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
         fd.append("preferred_frequency", formData.contentFrequency!);
         fd.append("use_emojis", formData.contentEmojis ? "true" : "false");
         fd.append("use_hashtags", formData.contentHashtags ? "true" : "false");
-        // Se usar CTA, descomente:
-        // fd.append("cta", formData.contentCallToAction ? "true" : "false");
+        fd.append("cta", formData.contentCallToAction ? "true" : "false");
 
         const result = await updateContentPreferencesAction(fd);
         if ((result as any).error) {
@@ -371,14 +371,16 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
         } else {
           toast({
             title: "Conteúdo salvo",
-            description: "As preferências de conteúdo foram atualizadas.",
+            description:
+              "As preferências de conteúdo foram atualizadas com sucesso.",
           });
+          // 3) Atualiza o formulário com o que voltou do banco (reparem as chaves corretas)
           const updated = (result as any)
             .content as PrefsFromServer["contentPreferences"];
           if (updated) {
             reset({
               ...formData,
-              contentTone: updated.content_tone as
+              contentTone: updated.preferred_tone as
                 | "professional"
                 | "casual"
                 | "funny"
@@ -387,27 +389,32 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                 | "educational"
                 | "conversational"
                 | undefined,
-              contentFormality: updated.content_formality as
+              contentFormality: updated.preferred_formality as
                 | "formal"
                 | "semi_formal"
                 | "casual"
                 | "very_casual"
                 | undefined,
-              contentLength: updated.content_length as "short" | "medium" | "long" | undefined,
-              contentFrequency: updated.content_frequency as
+              contentLength: updated.preferred_length as
+                | "short"
+                | "medium"
+                | "long"
+                | undefined,
+              contentFrequency: updated.preferred_frequency as
                 | "daily"
                 | "several_times_a_week"
                 | "weekly"
                 | "bi_weekly"
                 | "monthly"
                 | undefined,
-              contentEmojis: updated.content_emojis,
-              contentHashtags: updated.content_hashtags,
+              contentEmojis: updated.use_emojis,
+              contentHashtags: updated.use_hashtags,
+              contentCallToAction: updated.cta ?? false,
             });
           }
         }
       } else {
-        // Submete todas as preferências (savePref)
+        // 4) Se não for aba “contentPreferences”, submete tudo via savePref
         const result = await savePref(formData);
         if ((result as any).status !== "success") {
           throw new Error((result as any).status || "Erro desconhecido");
@@ -417,16 +424,17 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
         setTimeout(() => setShowSuccess(false), 2000);
         toast({
           title: "Preferences saved",
-          description: "All your preferences have been updated successfully.",
+          description:
+            "Todas as suas preferências foram atualizadas com sucesso.",
         });
       }
     } catch (error: any) {
       console.error("Error saving preferences:", error);
       toast({
-        title: "Error saving preferences",
+        title: "Erro ao salvar preferências",
         description:
           activeTab === "contentPreferences"
-            ? "Não foi possível salvar suas preferências de conteúdo."
+            ? "Não foi possível salvar suas preferências de conteúdo. Tente novamente."
             : "Houve um erro ao salvar suas preferências. Tente novamente.",
         variant: "destructive",
       });
@@ -440,7 +448,7 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
     toast({
       title: "Preferences reset",
       description:
-        "Your preferences have been reset to the values from the database.",
+        "Suas preferências foram restauradas aos valores atuais do banco de dados.",
     });
   };
 
@@ -458,14 +466,14 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
     document.body.removeChild(a);
     toast({
       title: "Preferences exported",
-      description: "Your preferences have been exported successfully.",
+      description: "Suas preferências foram exportadas com sucesso.",
     });
   };
 
   const handleImport = () => {
     toast({
       title: "Import preferences",
-      description: "This feature will be available in the next update.",
+      description: "Este recurso estará disponível na próxima atualização.",
     });
   };
 
@@ -858,7 +866,7 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
 
             {/* === TARGET AUDIENCE === */}
             <TabsContent value="audience" className="space-y-6">
-              {/* Target Age Groups */}
+              {/* --- Target Age Groups --- */}
               <motion.div
                 className="space-y-2"
                 initial={{ opacity: 0, y: 20 }}
@@ -913,7 +921,7 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                 )}
               </motion.div>
 
-              {/* Target Gender */}
+              {/* --- Target Gender --- */}
               <motion.div
                 className="space-y-2"
                 initial={{ opacity: 0, y: 20 }}
@@ -975,7 +983,7 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                 )}
               </motion.div>
 
-              {/* Target Location */}
+              {/* --- Target Location --- */}
               <motion.div
                 className="space-y-2"
                 initial={{ opacity: 0, y: 20 }}
@@ -996,7 +1004,7 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                 )}
               </motion.div>
 
-              {/* Target Interests */}
+              {/* --- Target Interests --- */}
               <motion.div
                 className="space-y-2"
                 initial={{ opacity: 0, y: 20 }}
@@ -1068,7 +1076,7 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                 )}
               </motion.div>
 
-              {/* Target Pain Points */}
+              {/* --- Target Pain Points --- */}
               <motion.div
                 className="space-y-2"
                 initial={{ opacity: 0, y: 20 }}
@@ -1388,9 +1396,34 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                   </p>
                 )}
 
-                {/*
-                  <-- CTA omitido conforme o schema atualizado -->
-                */}
+                {/* Include Call to Action */}
+                <Controller
+                  control={control}
+                  name="contentCallToAction"
+                  defaultValue={initialValues.contentCallToAction}
+                  render={({ field }) => (
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="content-cta">
+                          Include Call to Action
+                        </Label>
+                        <p className="text-sm text-muted-foreground">
+                          Add a call to action in generated content
+                        </p>
+                      </div>
+                      <Switch
+                        id="content-cta"
+                        checked={field.value}
+                        onCheckedChange={(checked) => field.onChange(checked)}
+                      />
+                    </div>
+                  )}
+                />
+                {errors.contentCallToAction && (
+                  <p className="text-red-500 text-sm">
+                    {(errors.contentCallToAction as any)?.message}
+                  </p>
+                )}
               </motion.div>
             </TabsContent>
 
@@ -1559,7 +1592,7 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
 
             {/* === BRAND VOICE === */}
             <TabsContent value="brand" className="space-y-6">
-              {/* Brand Values */}
+              {/* --- Brand Values --- */}
               <motion.div
                 className="space-y-2"
                 initial={{ opacity: 0, y: 20 }}
@@ -1622,7 +1655,7 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                 )}
               </motion.div>
 
-              {/* Brand Personality */}
+              {/* --- Brand Personality --- */}
               <motion.div
                 className="space-y-2"
                 initial={{ opacity: 0, y: 20 }}
@@ -1673,7 +1706,7 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                 )}
               </motion.div>
 
-              {/* Brand Description */}
+              {/* --- Brand Description --- */}
               <motion.div
                 className="space-y-2"
                 initial={{ opacity: 0, y: 20 }}
@@ -1701,7 +1734,7 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
 
             {/* === EXAMPLES === */}
             <TabsContent value="examples" className="space-y-6">
-              {/* Competitor URLs */}
+              {/* --- Competitor URLs --- */}
               <motion.div
                 className="space-y-2"
                 initial={{ opacity: 0, y: 20 }}
@@ -1765,7 +1798,7 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                 </p>
               </motion.div>
 
-              {/* Content You Like */}
+              {/* --- Content You Like --- */}
               <motion.div
                 className="space-y-2"
                 initial={{ opacity: 0, y: 20 }}
@@ -1789,7 +1822,7 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                 </p>
               </motion.div>
 
-              {/* Content to Avoid */}
+              {/* --- Content to Avoid --- */}
               <motion.div
                 className="space-y-2"
                 initial={{ opacity: 0, y: 20 }}
@@ -1820,7 +1853,7 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
             <div className="relative order-2 sm:order-1">
               <Mascot
                 emotion="thinking"
-                message="These details help me create better content ideas para você!"
+                message="Esses detalhes me ajudam a criar melhores ideias de conteúdo para você!"
                 size="md"
               />
             </div>
@@ -1861,7 +1894,7 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
               <CheckCircle2 className="h-16 w-16 text-secondary mb-4" />
               <h3 className="text-xl font-bold mb-2">Preferences Saved!</h3>
               <p className="text-muted-foreground">
-                Your content will now be more personalized.
+                Seu conteúdo agora será mais personalizado.
               </p>
             </motion.div>
           </motion.div>
