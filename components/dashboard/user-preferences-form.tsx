@@ -1,3 +1,4 @@
+// app/(private)/dashboard/settings/UserPreferencesForm.tsx
 "use client";
 
 import { useForm, Controller } from "react-hook-form";
@@ -56,10 +57,8 @@ import {
 } from "@/app/(private)/dashboard/settings/type";
 
 import { savePref } from "@/app/(private)/dashboard/settings/actions";
+import { updateContentPreferencesAction } from "@/app/(private)/dashboard/settings/contentAction";
 
-//
-// Interface que representa exatamente a resposta de getPref():
-//
 interface PrefsFromServer {
   businessInfo: {
     business_name: string;
@@ -84,7 +83,7 @@ interface PrefsFromServer {
     content_frequency: string;
     content_emojis: boolean;
     content_hashtags: boolean;
-    // ** REMOVED content_call_to_action **
+    // cta?: boolean;
   } | null;
   platformPreferences: {
     instagram: boolean;
@@ -116,7 +115,7 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
     examples,
   } = data;
 
-  // Mapeia snake_case → camelCase, removendo o campo `content_call_to_action`
+  // Mapeia snake_case → camelCase
   const mappedData: UpdatePreferencesData = {
     // === BUSINESS INFORMATION ===
     businessName: businessInfo?.business_name ?? "",
@@ -261,7 +260,7 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
       : undefined,
     contentEmojis: contentPreferences?.content_emojis ?? false,
     contentHashtags: contentPreferences?.content_hashtags ?? false,
-    // ** OMIT contentCallToAction completely **
+    // ** OMITIDO contentCallToAction **
 
     // === PLATFORM PREFERENCES ===
     platforms: {
@@ -294,7 +293,7 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
     reset,
     setValue,
     getValues,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<UpdatePreferencesData>({
     resolver: zodResolver(updatePreferencesSchema),
     defaultValues: initialValues,
@@ -303,15 +302,17 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
   const [formProgress, setFormProgress] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [activeTab, setActiveTab] = useState("business");
+  const [activeTab, setActiveTab] = useState<keyof PrefsFromServer>(
+    contentPreferences ? "contentPreferences" : "businessInfo"
+  );
 
-  // Quando `data` (a resposta de getPref) mudar, reset() para repopular o form
+  // Quando `data` mudar, reseta o form
   useEffect(() => {
     reset(initialValues);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
-  // Calcula progresso de preenchimento
+  // Calcula progresso
   const allValues = watch();
   useEffect(() => {
     const prefs = allValues as UpdatePreferencesData;
@@ -343,27 +344,90 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
     setFormProgress(progress);
   }, [allValues]);
 
-  // Ao submeter, chama savePref sem content_call_to_action
+  // Função unificada de submit
   const onSubmit = async (formData: UpdatePreferencesData) => {
     setIsSaving(true);
+
     try {
-      const result = await savePref(formData);
-      if ((result as any).status !== "success") {
-        throw new Error((result as any).status || "Erro desconhecido");
+      if (activeTab === "contentPreferences") {
+        // Submete só Content Preferences
+        const fd = new FormData();
+        fd.append("preferred_tone", formData.contentTone!);
+        fd.append("preferred_formality", formData.contentFormality!);
+        fd.append("preferred_length", formData.contentLength!);
+        fd.append("preferred_frequency", formData.contentFrequency!);
+        fd.append("use_emojis", formData.contentEmojis ? "true" : "false");
+        fd.append("use_hashtags", formData.contentHashtags ? "true" : "false");
+        // Se usar CTA, descomente:
+        // fd.append("cta", formData.contentCallToAction ? "true" : "false");
+
+        const result = await updateContentPreferencesAction(fd);
+        if ((result as any).error) {
+          toast({
+            title: "Erro ao salvar conteúdo",
+            description: (result as any).error,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Conteúdo salvo",
+            description: "As preferências de conteúdo foram atualizadas.",
+          });
+          const updated = (result as any)
+            .content as PrefsFromServer["contentPreferences"];
+          if (updated) {
+            reset({
+              ...formData,
+              contentTone: updated.content_tone as
+                | "professional"
+                | "casual"
+                | "funny"
+                | "serious"
+                | "inspirational"
+                | "educational"
+                | "conversational"
+                | undefined,
+              contentFormality: updated.content_formality as
+                | "formal"
+                | "semi_formal"
+                | "casual"
+                | "very_casual"
+                | undefined,
+              contentLength: updated.content_length as "short" | "medium" | "long" | undefined,
+              contentFrequency: updated.content_frequency as
+                | "daily"
+                | "several_times_a_week"
+                | "weekly"
+                | "bi_weekly"
+                | "monthly"
+                | undefined,
+              contentEmojis: updated.content_emojis,
+              contentHashtags: updated.content_hashtags,
+            });
+          }
+        }
+      } else {
+        // Submete todas as preferências (savePref)
+        const result = await savePref(formData);
+        if ((result as any).status !== "success") {
+          throw new Error((result as any).status || "Erro desconhecido");
+        }
+        reset(formData);
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 2000);
+        toast({
+          title: "Preferences saved",
+          description: "All your preferences have been updated successfully.",
+        });
       }
-      reset(formData);
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 2000);
-      toast({
-        title: "Preferences saved",
-        description: "Your content preferences have been updated successfully.",
-      });
     } catch (error: any) {
       console.error("Error saving preferences:", error);
       toast({
         title: "Error saving preferences",
         description:
-          "There was an error saving your preferences. Please try again.",
+          activeTab === "contentPreferences"
+            ? "Não foi possível salvar suas preferências de conteúdo."
+            : "Houve um erro ao salvar suas preferências. Tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -376,7 +440,7 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
     toast({
       title: "Preferences reset",
       description:
-        "Your content preferences have been reset to the values from the database.",
+        "Your preferences have been reset to the values from the database.",
     });
   };
 
@@ -394,7 +458,7 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
     document.body.removeChild(a);
     toast({
       title: "Preferences exported",
-      description: "Your content preferences have been exported successfully.",
+      description: "Your preferences have been exported successfully.",
     });
   };
 
@@ -466,8 +530,29 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
         </CardHeader>
         <CardContent>
           <Tabs
-            defaultValue={activeTab}
-            onValueChange={setActiveTab}
+            defaultValue={contentPreferences ? "content" : "business"}
+            onValueChange={(value) => {
+              switch (value) {
+                case "business":
+                  setActiveTab("businessInfo");
+                  break;
+                case "audience":
+                  setActiveTab("targetAudience");
+                  break;
+                case "content":
+                  setActiveTab("contentPreferences");
+                  break;
+                case "platforms":
+                  setActiveTab("platformPreferences");
+                  break;
+                case "brand":
+                  setActiveTab("brandVoice");
+                  break;
+                case "examples":
+                  setActiveTab("examples");
+                  break;
+              }
+            }}
             className="w-full"
           >
             <div className="overflow-x-auto pb-2">
@@ -533,6 +618,11 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                     {...register("businessName")}
                     className="rounded-lg border-2 border-primary/20 focus-visible:ring-primary"
                   />
+                  {errors.businessName && (
+                    <p className="text-red-500 text-sm">
+                      {errors.businessName.message}
+                    </p>
+                  )}
                 </motion.div>
 
                 <motion.div
@@ -548,6 +638,11 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                     {...register("website")}
                     className="rounded-lg border-2 border-primary/20 focus-visible:ring-primary"
                   />
+                  {errors.website && (
+                    <p className="text-red-500 text-sm">
+                      {errors.website.message}
+                    </p>
+                  )}
                 </motion.div>
               </div>
 
@@ -594,6 +689,11 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                       </Select>
                     )}
                   />
+                  {errors.businessType && (
+                    <p className="text-red-500 text-sm">
+                      {errors.businessType.message}
+                    </p>
+                  )}
                 </motion.div>
 
                 {/* Industry */}
@@ -637,6 +737,11 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                       </Select>
                     )}
                   />
+                  {errors.industry && (
+                    <p className="text-red-500 text-sm">
+                      {errors.industry.message}
+                    </p>
+                  )}
                 </motion.div>
               </div>
 
@@ -655,6 +760,11 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                     {...register("niche")}
                     className="rounded-lg border-2 border-primary/20 focus-visible:ring-primary"
                   />
+                  {errors.niche && (
+                    <p className="text-red-500 text-sm">
+                      {errors.niche.message}
+                    </p>
+                  )}
                 </motion.div>
 
                 {/* Business Size */}
@@ -697,6 +807,11 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                       </Select>
                     )}
                   />
+                  {errors.businessSize && (
+                    <p className="text-red-500 text-sm">
+                      {errors.businessSize.message}
+                    </p>
+                  )}
                 </motion.div>
               </div>
 
@@ -733,6 +848,11 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                     </Select>
                   )}
                 />
+                {errors.yearsInBusiness && (
+                  <p className="text-red-500 text-sm">
+                    {errors.yearsInBusiness.message}
+                  </p>
+                )}
               </motion.div>
             </TabsContent>
 
@@ -786,6 +906,11 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                     );
                   })}
                 </div>
+                {errors.targetAge && (
+                  <p className="text-red-500 text-sm">
+                    {errors.targetAge.message}
+                  </p>
+                )}
               </motion.div>
 
               {/* Target Gender */}
@@ -843,6 +968,11 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                     }
                   )}
                 </div>
+                {errors.targetGender && (
+                  <p className="text-red-500 text-sm">
+                    {errors.targetGender.message}
+                  </p>
+                )}
               </motion.div>
 
               {/* Target Location */}
@@ -859,6 +989,11 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                   {...register("targetLocation")}
                   className="rounded-lg border-2 border-primary/20 focus-visible:ring-primary"
                 />
+                {errors.targetLocation && (
+                  <p className="text-red-500 text-sm">
+                    {errors.targetLocation.message}
+                  </p>
+                )}
               </motion.div>
 
               {/* Target Interests */}
@@ -926,6 +1061,11 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                     }
                   }}
                 />
+                {errors.targetInterests && (
+                  <p className="text-red-500 text-sm">
+                    {(errors.targetInterests as any)?.message}
+                  </p>
+                )}
               </motion.div>
 
               {/* Target Pain Points */}
@@ -987,6 +1127,11 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                   Press Enter to add a pain point. Use Shift+Enter for new
                   lines.
                 </p>
+                {errors.targetPainPoints && (
+                  <p className="text-red-500 text-sm">
+                    {(errors.targetPainPoints as any)?.message}
+                  </p>
+                )}
               </motion.div>
             </TabsContent>
 
@@ -1036,6 +1181,11 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                       </Select>
                     )}
                   />
+                  {errors.contentTone && (
+                    <p className="text-red-500 text-sm">
+                      {errors.contentTone.message}
+                    </p>
+                  )}
                 </motion.div>
 
                 {/* Content Formality */}
@@ -1074,6 +1224,11 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                       </Select>
                     )}
                   />
+                  {errors.contentFormality && (
+                    <p className="text-red-500 text-sm">
+                      {errors.contentFormality.message}
+                    </p>
+                  )}
                 </motion.div>
               </div>
 
@@ -1117,6 +1272,11 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                       </Select>
                     )}
                   />
+                  {errors.contentLength && (
+                    <p className="text-red-500 text-sm">
+                      {errors.contentLength.message}
+                    </p>
+                  )}
                 </motion.div>
 
                 {/* Content Posting Frequency */}
@@ -1156,6 +1316,11 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                       </Select>
                     )}
                   />
+                  {errors.contentFrequency && (
+                    <p className="text-red-500 text-sm">
+                      {errors.contentFrequency.message}
+                    </p>
+                  )}
                 </motion.div>
               </div>
 
@@ -1188,6 +1353,11 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                     </div>
                   )}
                 />
+                {errors.contentEmojis && (
+                  <p className="text-red-500 text-sm">
+                    {(errors.contentEmojis as any)?.message}
+                  </p>
+                )}
 
                 {/* Include Hashtags */}
                 <Controller
@@ -1212,9 +1382,14 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                     </div>
                   )}
                 />
+                {errors.contentHashtags && (
+                  <p className="text-red-500 text-sm">
+                    {(errors.contentHashtags as any)?.message}
+                  </p>
+                )}
 
                 {/*
-                  <-- REMOVED “Include Call-to-Actions” block entirely -->
+                  <-- CTA omitido conforme o schema atualizado -->
                 */}
               </motion.div>
             </TabsContent>
@@ -1297,7 +1472,7 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                           viewBox="0 0 24 24"
                           fill="currentColor"
                         >
-                          <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
+                          <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.10z" />
                         </svg>
                         <div className="flex-1">
                           <h4 className="font-medium">TikTok</h4>
@@ -1440,6 +1615,11 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                     }
                   }}
                 />
+                {errors.brandValues && (
+                  <p className="text-red-500 text-sm">
+                    {(errors.brandValues as any)?.message}
+                  </p>
+                )}
               </motion.div>
 
               {/* Brand Personality */}
@@ -1486,6 +1666,11 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                     </Select>
                   )}
                 />
+                {errors.brandPersonality && (
+                  <p className="text-red-500 text-sm">
+                    {errors.brandPersonality.message}
+                  </p>
+                )}
               </motion.div>
 
               {/* Brand Description */}
@@ -1502,6 +1687,11 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                   {...register("brandDescription")}
                   className="min-h-[150px] rounded-lg border-2 border-primary/20 focus-visible:ring-primary"
                 />
+                {errors.brandDescription && (
+                  <p className="text-red-500 text-sm">
+                    {errors.brandDescription.message}
+                  </p>
+                )}
                 <p className="text-xs text-muted-foreground">
                   Describe your brand's mission, vision, and what makes it
                   unique.
@@ -1564,6 +1754,11 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                     }
                   }}
                 />
+                {errors.competitorUrls && (
+                  <p className="text-red-500 text-sm">
+                    {(errors.competitorUrls as any)?.message}
+                  </p>
+                )}
                 <p className="text-xs text-muted-foreground">
                   Add URLs of competitors whose content style you admire or want
                   to analyze.
@@ -1584,6 +1779,11 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                   {...register("favoriteContent")}
                   className="min-h-[100px] rounded-lg border-2 border-primary/20 focus-visible:ring-primary"
                 />
+                {errors.favoriteContent && (
+                  <p className="text-red-500 text-sm">
+                    {errors.favoriteContent.message}
+                  </p>
+                )}
                 <p className="text-xs text-muted-foreground">
                   Examples help us understand your style preferences.
                 </p>
@@ -1603,6 +1803,11 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
                   {...register("contentToAvoid")}
                   className="min-h-[100px] rounded-lg border-2 border-primary/20 focus-visible:ring-primary"
                 />
+                {errors.contentToAvoid && (
+                  <p className="text-red-500 text-sm">
+                    {errors.contentToAvoid.message}
+                  </p>
+                )}
                 <p className="text-xs text-muted-foreground">
                   Help us understand what not to generate for your brand.
                 </p>
@@ -1621,10 +1826,10 @@ export function UserPreferencesForm({ data }: { data: PrefsFromServer }) {
             </div>
             <Button
               type="submit"
-              disabled={isSaving}
+              disabled={isSaving || isSubmitting}
               className="rounded-full btn-bounce bg-secondary hover:bg-secondary/90 text-secondary-foreground order-1 sm:order-2 w-full sm:w-auto"
             >
-              {isSaving ? (
+              {isSaving || isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Saving...
