@@ -180,14 +180,14 @@ export default function SettingsPage() {
                     id="first-name"
                     className="rounded-lg border-2 border-primary/20 focus-visible:ring-primary"
                     onChange={(e) => setFirstName(e.target.value)}
+                    value={firstName}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="last-name">Last name</Label>
                   <Input
                     id="last-name"
-              value={lastName}
-
+                    value={lastName}
                     className="rounded-lg border-2 border-primary/20 focus-visible:ring-primary"
                     onChange={(e) => setLastName(e.target.value)}
                   />
