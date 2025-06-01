@@ -38,7 +38,7 @@ export default function ResetPasswordForm() {
     setLoading(true);
 
     if (values.password !== values.password_confirmation) {
-      setError("password_confirmation", { message: "As senhas não coincidem" });
+      setError("password_confirmation", { message: "Passwords do not match" });
       setLoading(false);
       return;
     }
@@ -47,11 +47,11 @@ export default function ResetPasswordForm() {
     formData.append("password", values.password);
     formData.append("password_confirmation", values.password_confirmation);
 
-    // Procura token nos query params (pode vir como "token" ou "code")
+    // Look for token in query params (could be "token" or "code")
     const token = searchParams.get("token") || searchParams.get("code") || "";
 
     if (!token) {
-      setError("password", { message: "Token inválido ou ausente." });
+      setError("password", { message: "Invalid or missing token." });
       setLoading(false);
       return;
     }
@@ -59,12 +59,12 @@ export default function ResetPasswordForm() {
     const response = await resetPassword(formData, token);
 
     if (response.status === "success") {
-      toast.success("Senha redefinida", {
-        description: "Sua senha foi redefinida com sucesso.",
+      toast.success("Password Reset", {
+        description: "Your password has been reset successfully.",
       });
       router.push("/login");
     } else {
-      setError("password", { message: response.status || "Erro desconhecido" });
+      setError("password", { message: response.status || "Unknown error" });
     }
 
     setLoading(false);
@@ -72,20 +72,20 @@ export default function ResetPasswordForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* Campo: Nova Senha */}
+      {/* Field: New Password */}
       <div className="space-y-2">
         <label
           htmlFor="password"
           className="block text-sm font-medium text-gray-700"
         >
-          Senha
+          Password
         </label>
         <div className="relative">
           <input
             id="password"
             type={showPassword ? "text" : "password"}
-            placeholder="Digite sua nova senha"
-            {...register("password", { required: "Senha é obrigatória" })}
+            placeholder="Enter your new password"
+            {...register("password", { required: "Password is required" })}
             className="w-full rounded-lg border-2 border-primary/20 focus-visible:ring-primary p-2 pr-10"
           />
           <button
@@ -102,23 +102,23 @@ export default function ResetPasswordForm() {
         )}
       </div>
 
-      {/* Campo: Confirmar Senha */}
+      {/* Field: Confirm Password */}
       <div className="space-y-2">
         <label
           htmlFor="password_confirmation"
           className="block text-sm font-medium text-gray-700"
         >
-          Confirmar Senha
+          Confirm Password
         </label>
         <div className="relative">
           <input
             id="password_confirmation"
             type={showPasswordConfirmation ? "text" : "password"}
-            placeholder="Confirme sua nova senha"
+            placeholder="Confirm your new password"
             {...register("password_confirmation", {
-              required: "A confirmação é obrigatória",
+              required: "Confirmation is required",
               validate: (value) =>
-                value === watch("password") || "As senhas não coincidem",
+                value === watch("password") || "Passwords do not match",
             })}
             className="w-full rounded-lg border-2 border-primary/20 focus-visible:ring-primary p-2 pr-10"
           />
@@ -142,7 +142,7 @@ export default function ResetPasswordForm() {
         )}
       </div>
 
-      {/* Botão de Redefinir */}
+      {/* Reset Button */}
       <Button
         type="submit"
         disabled={loading}
@@ -150,7 +150,7 @@ export default function ResetPasswordForm() {
           loading ? "opacity-50 cursor-not-allowed" : ""
         }`}
       >
-        {loading ? "Redefinindo..." : "Redefinir senha"}
+        {loading ? "Resetting..." : "Reset Password"}
       </Button>
     </form>
   );

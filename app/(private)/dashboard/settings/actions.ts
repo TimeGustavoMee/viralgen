@@ -3,36 +3,8 @@
 import { createClient } from "@/utils/supabase/server";
 import { UpdatePreferencesData } from "./type";
 
-
-export async function chagePasswordAction(formData: FormData) {
-    const supabase = await createClient();
-
-    const currentPassword = formData.get('currentPassword') as string;
-    const newPassword = formData.get('newPassword') as string;
-
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: (await supabase.auth.getUser()).data.user?.email as string,
-        password: currentPassword,
-    });
-
-    if (signInError) {
-        return { error: 'Current password is incorrect.' };
-    }
-
-    const { error: updateError } = await supabase.auth.updateUser({
-        password: newPassword,
-    });
-
-    if (updateError) {
-        return { error: 'Failed to update password. Please try again.' };
-    }
-
-    return { success: 'Password updated successfully!' };
-}
-
 export async function changeNameAction(formData: FormData) {
-
-    const supabase = await createClient()
+    const supabase = await createClient();
 
     const {
         data: { session },
@@ -40,11 +12,11 @@ export async function changeNameAction(formData: FormData) {
     } = await supabase.auth.getSession();
 
     if (sessionError || !session?.access_token) {
-        return { error: 'User not authenticated.' };
+        return { error: "User not authenticated." };
     }
 
     const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/settings/change-name`, {
-        method: 'POST',
+        method: "POST",
         headers: {
             Authorization: `Bearer ${session.access_token}`,
         },
@@ -53,7 +25,7 @@ export async function changeNameAction(formData: FormData) {
 
     if (!res.ok) {
         const data = await res.json();
-        return { error: data.error || 'Erro desconhecido.' };
+        return { error: data.error || "Erro desconhecido." };
     }
 
     return { success: true };
@@ -66,7 +38,6 @@ export async function savePref(data: UpdatePreferencesData) {
         data: { user },
         error: authError,
     } = await supabase.auth.getUser();
-
     if (authError) {
         return { status: `Auth error: ${authError.message}` };
     }
@@ -76,6 +47,7 @@ export async function savePref(data: UpdatePreferencesData) {
 
     const userId = user.id;
 
+    // 1) Business Information
     const businessInfoRecord = {
         user_id: userId,
         business_name: data.businessName,
@@ -87,6 +59,7 @@ export async function savePref(data: UpdatePreferencesData) {
         website: data.website,
     };
 
+    // 2) Target Audience
     const targetAudienceRecord = {
         user_id: userId,
         target_age: data.targetAge,
@@ -96,6 +69,7 @@ export async function savePref(data: UpdatePreferencesData) {
         target_pain_points: data.targetPainPoints,
     };
 
+    // 3) Content Preferences — remove `content_call_to_action` entirely
     const contentPreferencesRecord = {
         user_id: userId,
         content_tone: data.contentTone,
@@ -104,14 +78,16 @@ export async function savePref(data: UpdatePreferencesData) {
         content_frequency: data.contentFrequency,
         content_emojis: data.contentEmojis,
         content_hashtags: data.contentHashtags,
-        content_call_to_action: data.contentCallToAction,
+        // ** OMIT `content_call_to_action` here **
     };
 
+    // 4) Platform Preferences
     const platformPreferencesRecord = {
         user_id: userId,
         platforms: data.platforms,
     };
 
+    // 5) Brand Voice
     const brandVoiceRecord = {
         user_id: userId,
         brand_values: data.brandValues,
@@ -119,6 +95,7 @@ export async function savePref(data: UpdatePreferencesData) {
         brand_description: data.brandDescription,
     };
 
+    // 6) Examples
     const examplesRecord = {
         user_id: userId,
         competitor_urls: data.competitorUrls,
@@ -126,56 +103,46 @@ export async function savePref(data: UpdatePreferencesData) {
         content_to_avoid: data.contentToAvoid,
     };
 
+    // Upsert each table in turn:
+
     const { error: errBusiness } = await supabase
         .from("business_information")
-        .upsert(businessInfoRecord, {
-            onConflict: "user_id",
-        });
+        .upsert(businessInfoRecord, { onConflict: "user_id" });
     if (errBusiness) {
         return { status: `error_business_info: ${errBusiness.message}` };
     }
 
     const { error: errTarget } = await supabase
         .from("target_audience")
-        .upsert(targetAudienceRecord, {
-            onConflict: "user_id",
-        });
+        .upsert(targetAudienceRecord, { onConflict: "user_id" });
     if (errTarget) {
         return { status: `error_target_audience: ${errTarget.message}` };
     }
 
     const { error: errContentPrefs } = await supabase
         .from("content_preferences")
-        .upsert(contentPreferencesRecord, {
-            onConflict: "user_id",
-        });
+        .upsert(contentPreferencesRecord, { onConflict: "user_id" });
     if (errContentPrefs) {
         return { status: `error_content_preferences: ${errContentPrefs.message}` };
     }
 
     const { error: errPlatformPrefs } = await supabase
         .from("platform_preferences")
-        .upsert(platformPreferencesRecord, {
-            onConflict: "user_id",
-        });
+        .upsert(platformPreferencesRecord, { onConflict: "user_id" });
     if (errPlatformPrefs) {
         return { status: `error_platform_preferences: ${errPlatformPrefs.message}` };
     }
 
     const { error: errBrandVoice } = await supabase
         .from("brand_voice")
-        .upsert(brandVoiceRecord, {
-            onConflict: "user_id",
-        });
+        .upsert(brandVoiceRecord, { onConflict: "user_id" });
     if (errBrandVoice) {
         return { status: `error_brand_voice: ${errBrandVoice.message}` };
     }
 
     const { error: errExamples } = await supabase
         .from("examples")
-        .upsert(examplesRecord, {
-            onConflict: "user_id",
-        });
+        .upsert(examplesRecord, { onConflict: "user_id" });
     if (errExamples) {
         return { status: `error_examples: ${errExamples.message}` };
     }
@@ -184,11 +151,9 @@ export async function savePref(data: UpdatePreferencesData) {
 }
 
 export async function getPref(userId: string) {
-
     try {
         const supabase = await createClient();
-        // 2. Para cada tabela, faz select(*) WHERE user_id = userId
-        //    e retorna o primeiro (ou `null` se não houver)
+
         const { data: bizRows, error: errBiz } = await supabase
             .from("business_information")
             .select("*")
@@ -196,8 +161,6 @@ export async function getPref(userId: string) {
             .limit(1)
             .single();
         if (errBiz && errBiz.code !== "PGRST116") {
-            // PGRST116 = no rows found (single() falha com esse código). 
-            // Podemos ignorar esse erro e tratar como “não existe ainda”
             throw new Error(`Erro ao buscar business_information: ${errBiz.message}`);
         }
 
@@ -250,7 +213,7 @@ export async function getPref(userId: string) {
         if (errExamples && errExamples.code !== "PGRST116") {
             throw new Error(`Erro ao buscar examples: ${errExamples.message}`);
         }
-        // 3. Retorna um objeto com todas as seções (ou `null`/default se não existir)
+
         return {
             businessInfo: bizRows || null,
             targetAudience: targetRows || null,

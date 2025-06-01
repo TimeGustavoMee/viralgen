@@ -7,7 +7,6 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-  CardFooter,
 } from "@/components/ui/card";
 
 export default function ForgotPasswordPage() {

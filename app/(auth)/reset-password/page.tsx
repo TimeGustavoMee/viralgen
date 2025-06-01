@@ -15,11 +15,9 @@ export default function ResetPasswordPage() {
       <div className="container flex flex-1 items-center justify-center py-12">
         <Card className="w-full max-w-md border-2 border-primary/20 rounded-xl shadow-xl bg-white">
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl font-bold">
-              Redefinir senha
-            </CardTitle>
+            <CardTitle className="text-2xl font-bold">Reset Password</CardTitle>
             <CardDescription className="text-sm text-gray-600">
-              Insira sua nova senha e confirme para redefinir
+              Enter your new password and confirm to reset
             </CardDescription>
           </CardHeader>
 
