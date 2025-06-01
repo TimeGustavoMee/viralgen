@@ -17,10 +17,10 @@ export default function ForgotPasswordPage() {
         <Card className="w-full max-w-md border-2 border-primary/20 rounded-xl shadow-xl bg-white/80 backdrop-blur-md">
           <CardHeader className="space-y-1 text-center">
             <CardTitle className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-              Restaurar senha
+              Reset Your Password
             </CardTitle>
             <CardDescription className="text-sm text-gray-600 dark:text-gray-300">
-              Informe o seu email para receber o link de redefinição
+              Enter your email address below and we will send you a link to reset your password.
             </CardDescription>
           </CardHeader>
 

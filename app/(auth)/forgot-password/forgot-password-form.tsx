@@ -35,11 +35,11 @@ export default function ForgotPasswordForm() {
 
     if (response.status === "success") {
       toast({
-        title: "Email enviado",
-        description: "Verifique sua caixa de entrada para redefinir sua senha.",
+        title: "Email sent",
+        description: "Check your inbox to reset your password.",
       });
     } else {
-      setError("email", { message: response.status || "Erro ao enviar email" });
+      setError("email", { message: response.status || "Error sending email" });
     }
 
     setLoading(false);
@@ -57,8 +57,8 @@ export default function ForgotPasswordForm() {
         <Input
           id="email"
           type="email"
-          placeholder="seu@exemplo.com"
-          {...register("email", { required: "Email é obrigatório" })}
+          placeholder="your@example.com"
+          {...register("email", { required: "Email is required" })}
           className="w-full rounded-lg border-2 border-primary/20 focus-visible:ring-primary"
         />
         {errors.email && (
@@ -73,7 +73,7 @@ export default function ForgotPasswordForm() {
           loading ? "opacity-50 cursor-not-allowed" : ""
         }`}
       >
-        {loading ? "Enviando..." : "Restaurar Senha"}
+        {loading ? "Loading..." : "Reset Password"}
       </Button>
     </form>
   );

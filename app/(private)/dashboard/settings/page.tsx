@@ -19,7 +19,7 @@ import { useTheme } from "next-themes";
 import { Moon, Sun, Monitor } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useUserStore } from "@/stores/userStore";
-import { changeNameAction, getPref } from "./actions";
+import { changeNameAction, getPref, chagePasswordAction } from "./actions";
 import { useToast } from "@/hooks/use-toast";
 
 export default function SettingsPage() {
@@ -27,9 +27,12 @@ export default function SettingsPage() {
   const [firstName, setFirstName] = useState<string>("");
   const [lastName, setLastName] = useState<string>("");
   const [preferences, setPreferences] = useState<any | null>(null);
+  const [currentPassword, setCurrentPassword] = useState<string>("");
+  const [newPassword, setNewPassword] = useState<string>("");
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
+
   const user = useUserStore((state) => state.user);
   const { theme, setTheme } = useTheme();
-  const [refresh, setRefresh] = useState<number>(0);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -50,7 +53,7 @@ export default function SettingsPage() {
       }
     };
     fetchPreferences();
-  }, [user, refresh]);
+  }, [user]);
   const handleSaveProfile = () => {
     setIsLoading(true);
     const formData = new FormData();
@@ -85,14 +88,43 @@ export default function SettingsPage() {
   const handleSavePassword = () => {
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    if (newPassword !== confirmPassword) {
       toast({
-        title: "Password updated",
-        description: "Your password has been updated successfully.",
+        title: "Error",
+        description: "New password and confirmation do not match.",
+        variant: "destructive",
       });
-    }, 1000);
+      setIsLoading(false);
+      return;
+    }
+    const formData = new FormData();
+    formData.append("currentPassword", currentPassword);
+    formData.append("newPassword", newPassword);
+    chagePasswordAction(formData)
+      .then((response) => {
+        if (response.error) {
+          toast({
+            title: "Error",
+            description: response.error,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Password updated",
+            description: "Your password has been updated successfully.",
+          });
+        }
+      })
+      .catch((error) => {
+        console.error("Error updating password:", error);
+        toast({
+          title: "Error",
+          description:
+            "An unexpected error occurred while updating your password.",
+          variant: "destructive",
+        });
+      });
+    setIsLoading(false);
   };
 
   return (
@@ -291,6 +323,9 @@ export default function SettingsPage() {
                   id="current-password"
                   type="password"
                   className="rounded-lg border-2 border-primary/20 focus-visible:ring-primary"
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  value={currentPassword}
+                  placeholder="Enter your current password"
                 />
               </div>
 
@@ -300,6 +335,9 @@ export default function SettingsPage() {
                   id="new-password"
                   type="password"
                   className="rounded-lg border-2 border-primary/20 focus-visible:ring-primary"
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  value={newPassword}
+                  placeholder="Enter your new password"
                 />
               </div>
 
@@ -309,6 +347,9 @@ export default function SettingsPage() {
                   id="confirm-password"
                   type="password"
                   className="rounded-lg border-2 border-primary/20 focus-visible:ring-primary"
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  value={confirmPassword}
+                  placeholder="Re-enter your new password"
                 />
               </div>
             </CardContent>

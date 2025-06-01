@@ -4,6 +4,32 @@ import { createClient } from "@/utils/supabase/server";
 import { UpdatePreferencesData } from "./type";
 
 
+export async function chagePasswordAction(formData: FormData) {
+    const supabase = await createClient();
+
+    const currentPassword = formData.get('currentPassword') as string;
+    const newPassword = formData.get('newPassword') as string;
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: (await supabase.auth.getUser()).data.user?.email as string,
+        password: currentPassword,
+    });
+
+    if (signInError) {
+        return { error: 'Current password is incorrect.' };
+    }
+
+    const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
+    });
+
+    if (updateError) {
+        return { error: 'Failed to update password. Please try again.' };
+    }
+
+    return { success: 'Password updated successfully!' };
+}
+
 export async function changeNameAction(formData: FormData) {
 
     const supabase = await createClient()
@@ -14,7 +40,7 @@ export async function changeNameAction(formData: FormData) {
     } = await supabase.auth.getSession();
 
     if (sessionError || !session?.access_token) {
-        return { error: 'Usuário não autenticado.' };
+        return { error: 'User not authenticated.' };
     }
 
     const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/settings/change-name`, {
