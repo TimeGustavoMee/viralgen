@@ -6,6 +6,7 @@ export const targetGenderEnum = z.enum(["male", "female", "all"]);
 //
 // Remove `content_call_to_action` from this schema.
 //
+
 export const preferencesSchema = z.object({
   businessName: z.string(),
   businessType: z.enum([
@@ -20,6 +21,7 @@ export const preferencesSchema = z.object({
     "non_profit",
     "other",
   ]),
+
   industry: z.enum([
     "technology",
     "marketing",
@@ -34,8 +36,10 @@ export const preferencesSchema = z.object({
     "other",
   ]),
   niche: z.string(),
+
   businessSize: z.enum(["solo_entrepreneur", "small", "medium", "large"]),
   yearsInBusiness: z.enum(["less_1_year", "1_3_years", "4_10_years", "more_10_years"]),
+
   website: z.string(),
 
   targetGender: z.array(targetGenderEnum).min(1),
@@ -85,9 +89,13 @@ export const preferencesSchema = z.object({
   contentToAvoid: z.string(),
 });
 
+
 export const updatePreferencesSchema = preferencesSchema.partial();
+
 
 export type UpdatePreferencesData = z.infer<typeof updatePreferencesSchema>;
 export type PreferencesData = z.infer<typeof preferencesSchema>;
 export type TargetAge = z.infer<typeof targetAgeEnum>;
+
 export type TargetGender = z.infer<typeof targetGenderEnum>;
+

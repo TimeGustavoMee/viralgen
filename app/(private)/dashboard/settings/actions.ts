@@ -1,4 +1,4 @@
-"use server";
+'use server';
 
 import { createClient } from "@/utils/supabase/server";
 import { UpdatePreferencesData } from "./type";
@@ -6,6 +6,7 @@ import { UpdatePreferencesData } from "./type";
 // para atualizar senha
 export async function changePasswordAction(formData: FormData) {
   const supabase = await createClient();
+
 
   // Pega o e-mail do usuário logado
   const {
@@ -280,5 +281,4 @@ export async function getPref(userId: string) {
     console.error("Erro ao buscar preferências:", error);
     return { error: "Erro ao buscar preferências." };
   }
-}
 

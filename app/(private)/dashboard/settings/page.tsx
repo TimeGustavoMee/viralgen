@@ -65,7 +65,6 @@ export default function SettingsPage() {
     const formData = new FormData();
     formData.append("first_name", firstName);
     formData.append("last_name", lastName);
-
     const response = await changeNameAction(formData);
     if ((response as any).error) {
       toast({
@@ -179,7 +178,6 @@ export default function SettingsPage() {
                   <Label htmlFor="first-name">First name</Label>
                   <Input
                     id="first-name"
-                    value={firstName}
                     className="rounded-lg border-2 border-primary/20 focus-visible:ring-primary"
                     onChange={(e) => setFirstName(e.target.value)}
                   />
@@ -188,7 +186,8 @@ export default function SettingsPage() {
                   <Label htmlFor="last-name">Last name</Label>
                   <Input
                     id="last-name"
-                    value={lastName}
+              value={lastName}
+
                     className="rounded-lg border-2 border-primary/20 focus-visible:ring-primary"
                     onChange={(e) => setLastName(e.target.value)}
                   />
