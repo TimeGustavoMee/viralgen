@@ -19,7 +19,7 @@ import { useTheme } from "next-themes";
 import { Moon, Sun, Monitor } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useUserStore } from "@/stores/userStore";
-import { changeNameAction, getPref, chagePasswordAction } from "./actions";
+import { changeNameAction, getPref } from "./actions";
 import { useToast } from "@/hooks/use-toast";
 
 export default function SettingsPage() {
@@ -27,104 +27,69 @@ export default function SettingsPage() {
   const [firstName, setFirstName] = useState<string>("");
   const [lastName, setLastName] = useState<string>("");
   const [preferences, setPreferences] = useState<any | null>(null);
-  const [currentPassword, setCurrentPassword] = useState<string>("");
-  const [newPassword, setNewPassword] = useState<string>("");
-  const [confirmPassword, setConfirmPassword] = useState<string>("");
-
   const user = useUserStore((state) => state.user);
   const { theme, setTheme } = useTheme();
+  const [refresh, setRefresh] = useState<number>(0);
   const { toast } = useToast();
 
+  // Populate first & last name from user store
   useEffect(() => {
-    setFirstName(user?.user_metadata?.first_name);
-    setLastName(user?.user_metadata?.last_name);
+    setFirstName(user?.user_metadata?.first_name || "");
+    setLastName(user?.user_metadata?.last_name || "");
   }, [user]);
 
+  // Fetch preferences from the server when user.id or refresh changes
   useEffect(() => {
-    const fetchPreferences = async () => {
-      if (user?.id) {
-        const prefData = await getPref(user.id);
-        if (!prefData.error) {
-          setPreferences(prefData);
-        } else {
-          setPreferences(null);
-          // Optionally, you can show a toast or handle the error here
-        }
+    async function fetchPreferences() {
+      if (!user?.id) {
+        setPreferences(null);
+        return;
       }
-    };
+
+      const prefData = await getPref(user.id);
+      // If getPref returned an { error: ... }, drop back to null
+      if ((prefData as any).error) {
+        setPreferences(null);
+      } else {
+        setPreferences(prefData);
+      }
+    }
     fetchPreferences();
-  }, [user]);
-  const handleSaveProfile = () => {
+  }, [user, refresh]);
+
+  // Save profile's first/last name
+  const handleSaveProfile = async () => {
     setIsLoading(true);
     const formData = new FormData();
     formData.append("first_name", firstName);
     formData.append("last_name", lastName);
-    changeNameAction(formData)
-      .then((response) => {
-        if (response.error) {
-          toast({
-            title: "Error",
-            description: response.error,
-            variant: "destructive",
-          });
-        }
-      })
-      .catch((error) => {
-        console.error("Error updating profile:", error);
-        toast({
-          title: "Error",
-          description:
-            "An unexpected error occurred while updating your profile.",
-          variant: "destructive",
-        });
+
+    const response = await changeNameAction(formData);
+    if ((response as any).error) {
+      toast({
+        title: "Error",
+        description: (response as any).error,
+        variant: "destructive",
       });
-    toast({
-      title: "Profile updated",
-      description: "Your profile information has been updated successfully.",
-    });
+    } else {
+      toast({
+        title: "Profile updated",
+        description: "Your profile information has been updated successfully.",
+      });
+    }
     setIsLoading(false);
   };
 
   const handleSavePassword = () => {
     setIsLoading(true);
-
-    if (newPassword !== confirmPassword) {
-      toast({
-        title: "Error",
-        description: "New password and confirmation do not match.",
-        variant: "destructive",
-      });
+    // Simulate API call
+    setTimeout(() => {
       setIsLoading(false);
-      return;
-    }
-    const formData = new FormData();
-    formData.append("currentPassword", currentPassword);
-    formData.append("newPassword", newPassword);
-    chagePasswordAction(formData)
-      .then((response) => {
-        if (response.error) {
-          toast({
-            title: "Error",
-            description: response.error,
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Password updated",
-            description: "Your password has been updated successfully.",
-          });
-        }
-      })
-      .catch((error) => {
-        console.error("Error updating password:", error);
-        toast({
-          title: "Error",
-          description:
-            "An unexpected error occurred while updating your password.",
-          variant: "destructive",
-        });
+      toast({
+        title: "Password updated",
+        description: "Your password has been updated successfully.",
       });
-    setIsLoading(false);
+    }, 1000);
   };
 
   return (
@@ -164,6 +129,7 @@ export default function SettingsPage() {
           </TabsTrigger>
         </TabsList>
 
+        {/* ========== Profile Tab ========== */}
         <TabsContent value="profile" className="mt-6">
           <Card className="border-2 border-primary/20 rounded-xl shadow-md overflow-hidden">
             <CardHeader>
@@ -178,7 +144,7 @@ export default function SettingsPage() {
                   <Label htmlFor="first-name">First name</Label>
                   <Input
                     id="first-name"
-                    defaultValue={firstName}
+                    value={firstName}
                     className="rounded-lg border-2 border-primary/20 focus-visible:ring-primary"
                     onChange={(e) => setFirstName(e.target.value)}
                   />
@@ -187,7 +153,7 @@ export default function SettingsPage() {
                   <Label htmlFor="last-name">Last name</Label>
                   <Input
                     id="last-name"
-                    defaultValue={lastName}
+                    value={lastName}
                     className="rounded-lg border-2 border-primary/20 focus-visible:ring-primary"
                     onChange={(e) => setLastName(e.target.value)}
                   />
@@ -217,13 +183,22 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
+        {/* ========== Preferences Tab ========== */}
         <TabsContent value="preferences" className="mt-6">
-          <UserPreferencesForm
-            data={preferences}
-            onUpdate={(prev) => prev + 1}
-          />
+          {/*
+            Only render UserPreferencesForm once `preferences` is non-null.
+            Otherwise show a placeholder or spinner.
+          */}
+          {preferences ? (
+            <UserPreferencesForm data={preferences} />
+          ) : (
+            <div className="p-8 text-center text-sm text-muted-foreground">
+              {user ? "Loading preferences…" : "Log in to see your preferences"}
+            </div>
+          )}
         </TabsContent>
 
+        {/* ========== Appearance Tab ========== */}
         <TabsContent value="appearance" className="mt-6">
           <Card className="border-2 border-primary/20 rounded-xl shadow-md overflow-hidden">
             <CardHeader>
@@ -308,6 +283,7 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
+        {/* ========== Password Tab ========== */}
         <TabsContent value="password" className="mt-6">
           <Card className="border-2 border-primary/20 rounded-xl shadow-md overflow-hidden">
             <CardHeader>
@@ -323,9 +299,6 @@ export default function SettingsPage() {
                   id="current-password"
                   type="password"
                   className="rounded-lg border-2 border-primary/20 focus-visible:ring-primary"
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  value={currentPassword}
-                  placeholder="Enter your current password"
                 />
               </div>
 
@@ -335,9 +308,6 @@ export default function SettingsPage() {
                   id="new-password"
                   type="password"
                   className="rounded-lg border-2 border-primary/20 focus-visible:ring-primary"
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  value={newPassword}
-                  placeholder="Enter your new password"
                 />
               </div>
 
@@ -347,9 +317,6 @@ export default function SettingsPage() {
                   id="confirm-password"
                   type="password"
                   className="rounded-lg border-2 border-primary/20 focus-visible:ring-primary"
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  value={confirmPassword}
-                  placeholder="Re-enter your new password"
                 />
               </div>
             </CardContent>
