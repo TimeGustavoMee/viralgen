@@ -1,8 +1,12 @@
 import { z } from "zod";
 
-
 export const targetAgeEnum = z.enum(["18–24", "25–34", "35–44", "45–54", "55–64", "65+"]);
-export const targetGenderEnum = z.enum(["male", "female", "all"])
+export const targetGenderEnum = z.enum(["male", "female", "all"]);
+
+//
+// Remove `content_call_to_action` from this schema.
+//
+
 export const preferencesSchema = z.object({
   businessName: z.string(),
   businessType: z.enum([
@@ -53,11 +57,8 @@ export const preferencesSchema = z.object({
     "educational",
     "conversational",
   ]),
-
   contentFormality: z.enum(["formal", "semi_formal", "casual", "very_casual"]),
-
   contentLength: z.enum(["short", "medium", "long"]),
-
   contentFrequency: z.enum([
     "daily",
     "several_times_a_week",
@@ -65,9 +66,10 @@ export const preferencesSchema = z.object({
     "bi_weekly",
     "monthly",
   ]),
+
+  // Remove `contentCallToAction` field entirely:
   contentEmojis: z.boolean(),
   contentHashtags: z.boolean(),
-  contentCallToAction: z.boolean(),
 
   platforms: z.object({
     instagram: z.boolean(),
@@ -87,9 +89,13 @@ export const preferencesSchema = z.object({
   contentToAvoid: z.string(),
 });
 
-export const updatePreferencesSchema = preferencesSchema.partial()
+
+export const updatePreferencesSchema = preferencesSchema.partial();
+
 
 export type UpdatePreferencesData = z.infer<typeof updatePreferencesSchema>;
 export type PreferencesData = z.infer<typeof preferencesSchema>;
 export type TargetAge = z.infer<typeof targetAgeEnum>;
+
 export type TargetGender = z.infer<typeof targetGenderEnum>;
+
