@@ -2,15 +2,17 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { ChevronDown, ChevronUp, Settings } from "lucide-react"
-
-interface ContentGenerationOptionsProps {
-  onOptionsChange: (options: ContentGenerationOptions) => void
-}
 
 export interface ContentGenerationOptions {
   platform: string
@@ -21,25 +23,33 @@ export interface ContentGenerationOptions {
   categorized: boolean
 }
 
-export function ContentGenerationOptions({ onOptionsChange }: ContentGenerationOptionsProps) {
+interface ContentGenerationOptionsProps {
+  options: ContentGenerationOptions
+  onOptionsChange: (options: ContentGenerationOptions) => void
+}
+
+export function ContentGenerationOptions({
+  options,
+  onOptionsChange,
+}: ContentGenerationOptionsProps) {
+  // Somente controla abertura/fechamento do Collapsible
   const [isOpen, setIsOpen] = useState(false)
-  const [options, setOptions] = useState<ContentGenerationOptions>({
-    platform: "any",
-    format: "any",
-    tone: "professional",
-    audience: "general",
-    count: 5,
-    categorized: false,
-  })
+
+  // DEBUG: exibe sempre o valor atual de options.categorized
+  console.log("ContentGenerationOptions render: options.categorized =", options.categorized)
 
   const handleOptionChange = (key: keyof ContentGenerationOptions, value: any) => {
+    console.log(`ContentGenerationOptions: tentando setar ${key} =`, value)
     const newOptions = { ...options, [key]: value }
-    setOptions(newOptions)
     onOptionsChange(newOptions)
   }
 
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full rounded-lg border border-border p-4 bg-card">
+    <Collapsible
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      className="w-full rounded-lg border border-border p-4 bg-card"
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Settings className="h-4 w-4 text-muted-foreground" />
@@ -56,7 +66,10 @@ export function ContentGenerationOptions({ onOptionsChange }: ContentGenerationO
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="platform">Platform</Label>
-            <Select value={options.platform} onValueChange={(value) => handleOptionChange("platform", value)}>
+            <Select
+              value={options.platform}
+              onValueChange={(value) => handleOptionChange("platform", value)}
+            >
               <SelectTrigger id="platform">
                 <SelectValue placeholder="Select platform" />
               </SelectTrigger>
@@ -74,7 +87,10 @@ export function ContentGenerationOptions({ onOptionsChange }: ContentGenerationO
 
           <div className="space-y-2">
             <Label htmlFor="format">Content Format</Label>
-            <Select value={options.format} onValueChange={(value) => handleOptionChange("format", value)}>
+            <Select
+              value={options.format}
+              onValueChange={(value) => handleOptionChange("format", value)}
+            >
               <SelectTrigger id="format">
                 <SelectValue placeholder="Select format" />
               </SelectTrigger>
@@ -91,7 +107,10 @@ export function ContentGenerationOptions({ onOptionsChange }: ContentGenerationO
 
           <div className="space-y-2">
             <Label htmlFor="tone">Tone of Voice</Label>
-            <Select value={options.tone} onValueChange={(value) => handleOptionChange("tone", value)}>
+            <Select
+              value={options.tone}
+              onValueChange={(value) => handleOptionChange("tone", value)}
+            >
               <SelectTrigger id="tone">
                 <SelectValue placeholder="Select tone" />
               </SelectTrigger>
@@ -108,7 +127,10 @@ export function ContentGenerationOptions({ onOptionsChange }: ContentGenerationO
 
           <div className="space-y-2">
             <Label htmlFor="audience">Target Audience</Label>
-            <Select value={options.audience} onValueChange={(value) => handleOptionChange("audience", value)}>
+            <Select
+              value={options.audience}
+              onValueChange={(value) => handleOptionChange("audience", value)}
+            >
               <SelectTrigger id="audience">
                 <SelectValue placeholder="Select audience" />
               </SelectTrigger>
@@ -147,7 +169,9 @@ export function ContentGenerationOptions({ onOptionsChange }: ContentGenerationO
             onChange={(e) => handleOptionChange("categorized", e.target.checked)}
             className="rounded border-primary text-primary focus:ring-primary"
           />
-          <Label htmlFor="categorized">Generate categorized content (uses more credits)</Label>
+          <Label htmlFor="categorized">
+            Generate categorized content (uses more credits)
+          </Label>
         </div>
       </CollapsibleContent>
     </Collapsible>

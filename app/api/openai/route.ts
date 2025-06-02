@@ -1,13 +1,14 @@
-// /app/api/openai/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import OpenAI from "openai";
+import { promptsJson } from "@/app/constants/prompts";
 
 // Reutiliza o schema de preferências (Zod) definido em outro arquivo
 import {
   preferencesSchema,
   type PreferencesData,
 } from "@/app/(private)/dashboard/settings/type";
+import { get } from "http";
 
 const prefsBodySchema = z.object({
   prefs: preferencesSchema,
@@ -30,6 +31,13 @@ const promptOptionsBodySchema = z.object({
 const requestBodySchema = z.union([prefsBodySchema, promptOptionsBodySchema]);
 
 const openai = new OpenAI();
+
+// Se quiser outro “número razoável” diferente de 5 para modo não-categorizado,
+// basta alterar este valor:
+
+
+const DEFAULT_NON_CATEGORIZED_COUNT = 5; // Garante entre 1 e 5 ideias
+
 
 async function generateFromPrompt(
   prompt: string,
@@ -76,7 +84,7 @@ async function generateFromPrompt(
     }>;
   }>;
 }> {
-  const systemMessage = `
+  const systemMessage = promptsJson + `
 Você é um assistente especializado em gerar ideias de conteúdo para mídias sociais e marketing digital.
 Você sempre responderá com JSON válido (sem explicações em texto), seguindo exatamente esta estrutura:
 
@@ -153,7 +161,7 @@ Não inclua nenhuma explicação fora desse JSON. Não coloque comentários, nem
     userPrompt += `\nPúblico-alvo: ${audience}.`;
   }
   if (count) {
-    userPrompt += `\nRetorne exatamente ${count} ${
+    userPrompt += `\nRetorne aproximadamente ${count} ${
       categorized ? "categorias" : "ideias"
     }.`;
   }
@@ -208,7 +216,7 @@ export async function POST(request: NextRequest) {
       // e pedir ao modelo para retornar as ideias/categorias a partir daí.
       // Exemplo de prompt:
       const prefsAsJson = JSON.stringify(prefs);
-      const systemMessagePrefs = `
+      const systemMessagePrefs = promptsJson + `
 Você é um assistente que recebe um objeto JSON com preferências de negócio de um usuário (campos como businessName, industry, targetAudience etc.).
 A partir dessas preferências, gere um JSON estruturado contendo:
 1) "categories": lista de categorias (campo "name") e, dentro de cada categoria, um array "ideas" com objetos de ideias (mesmos campos de id, title, description, isFavorite, etc.);
@@ -263,9 +271,9 @@ Gere as categorias e ideias conforme as instruções acima.
       });
 
       const text = chatResponse.choices?.[0]?.message?.content || "";
-      let parsed: any;
+      let parsedPrefs: any;
       try {
-        parsed = JSON.parse(text);
+        parsedPrefs = JSON.parse(text);
       } catch (err) {
         console.error("Erro ao converter resposta da OpenAI em JSON (prefs):", text);
         throw new Error(
@@ -277,7 +285,7 @@ Gere as categorias e ideias conforme as instruções acima.
       // Retornamos exatamente o que o modelo enviou (categories + extraIdeas)
       return NextResponse.json({
         success: true,
-        data: parsed,
+        data: parsedPrefs,
       });
     } else {
       // — Caso 2: veio { prompt: string; options?: {...} }
@@ -293,28 +301,33 @@ Gere as categorias e ideias conforme as instruções acima.
         };
       };
 
-      // Chamamos nossa função que dispara a OpenAI e retorna o JSON com "ideas" ou "categories"
-      const fakeResult = await generateFromPrompt(prompt, {
-        categorized: options?.categorized,
+      // Se não for categorizado, ignoramos o count do usuário e usamos o DEFAULT_NON_CATEGORIZED_COUNT
+      const isCategorized = options?.categorized ?? false;
+      const promptCount = isCategorized
+        ? options?.count
+        : DEFAULT_NON_CATEGORIZED_COUNT;
+
+      const results = await generateFromPrompt(prompt, {
+        categorized: isCategorized,
         platform: options?.platform,
         format: options?.format,
         tone: options?.tone,
         audience: options?.audience,
-        count: options?.count,
+        count: promptCount,
       });
 
-      if (options?.categorized) {
+      if (isCategorized) {
         return NextResponse.json({
           success: true,
           data: {
-            categories: fakeResult.categories,
+            categories: results.categories,
           },
         });
       } else {
         return NextResponse.json({
           success: true,
           data: {
-            ideas: fakeResult.ideas,
+            ideas: results.ideas,
           },
         });
       }
