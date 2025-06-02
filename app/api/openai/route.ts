@@ -1,14 +1,20 @@
+// /pages/api/openai.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import OpenAI from "openai";
+
+// Import o promptsJson “cru” (com tokens {...})
 import { promptsJson } from "@/app/constants/prompts";
+
+// Import nosso utilitário de “preencher placeholders”:
+import { fillAllPrompts, type PromptsJson } from "@/utils/fillPrompts";
 
 // Reutiliza o schema de preferências (Zod) definido em outro arquivo
 import {
   preferencesSchema,
   type PreferencesData,
 } from "@/app/(private)/dashboard/settings/type";
-import { get } from "http";
 
 const prefsBodySchema = z.object({
   prefs: preferencesSchema,
@@ -34,12 +40,15 @@ const openai = new OpenAI();
 
 // Se quiser outro “número razoável” diferente de 5 para modo não-categorizado,
 // basta alterar este valor:
-
-
 const DEFAULT_NON_CATEGORIZED_COUNT = 5; // Garante entre 1 e 5 ideias
 
-
+/**
+ * Função auxiliar que gera as ideias a partir de um prompt genérico.
+ * Aqui vamos reaproveitar o mesmo “systemMessage” de todos os blocos preenchidos
+ * via fillAllPrompts(...) + instruções adicionais.
+ */
 async function generateFromPrompt(
+  // “prompt” genérico que o usuário enviou (pode vir de `promptOptionsBodySchema`)
   prompt: string,
   options: {
     categorized?: boolean;
@@ -48,7 +57,9 @@ async function generateFromPrompt(
     tone?: string;
     audience?: string;
     count?: number;
-  } = {}
+  } = {},
+  // AQUI recebemos o “PromptsJson” já preenchido (todos os blocos preenchidos com prefs)
+  filledPrompts: PromptsJson
 ): Promise<{
   ideas?: Array<{
     id: string;
@@ -84,7 +95,16 @@ async function generateFromPrompt(
     }>;
   }>;
 }> {
-  const systemMessage = promptsJson + `
+  // (1) Concatenamos todos os “prompts” preenchidos de cada bloco
+  //     num único systemMessage, separados por 2 quebras de linha.
+  const systemMessage = filledPrompts.blocks
+    .map((blk) => blk.prompt.trim())
+    .join("\n\n");
+
+  // (2) Adicionamos instruções fixas para o ChatGPT seguir “sempre JSON”
+  const systemMessageWithInstructions = `
+${systemMessage}
+
 Você é um assistente especializado em gerar ideias de conteúdo para mídias sociais e marketing digital.
 Você sempre responderá com JSON válido (sem explicações em texto), seguindo exatamente esta estrutura:
 
@@ -101,7 +121,7 @@ Se for requisitado sem categorização:
       "platform": "<ex: Instagram, LinkedIn, etc>",
       "tags": ["<tag1>", "<tag2>"],
       "estimatedEngagement": "<ex: Alto, Médio, Baixo>",
-      "difficulty": "<\"easy\" | \"medium\" | \"hard\">",
+      "difficulty": "<\\"easy\\" | \\"medium\\" | \\"hard\\">",
       "timeToCreate": "<ex: 2h, 30m>",
       "bestTimeToPost": "<ex: Manhã, Tarde, Noite>",
       "targetAudience": "<descrição do público>",
@@ -131,8 +151,8 @@ Se for requisitado com categorização (options.categorized = true):
   ]
 }
 
-Não inclua nenhuma explicação fora desse JSON. Não coloque comentários, nem texto adicional.  
-`;
+Não inclua nenhuma explicação fora desse JSON. Não coloque comentários, nem texto adicional.
+  `.trim();
 
   const {
     categorized = false,
@@ -147,7 +167,6 @@ Não inclua nenhuma explicação fora desse JSON. Não coloque comentários, nem
     categorized ? "categorias de ideias" : "ideias"
   } com base neste input: "${prompt}"`;
 
-  // Se vierem parâmetros extras, adicionamos detalhes ao pedido
   if (platform) {
     userPrompt += `\nPlataforma preferida: ${platform}.`;
   }
@@ -160,25 +179,25 @@ Não inclua nenhuma explicação fora desse JSON. Não coloque comentários, nem
   if (audience) {
     userPrompt += `\nPúblico-alvo: ${audience}.`;
   }
-  if (count) {
-    userPrompt += `\nRetorne aproximadamente ${count} ${
+
+  // Se count for passado, sobrescrevemos; senão, usamos DEFAULT_NON_CATEGORIZED_COUNT
+  const promptCount = categorized ? count : DEFAULT_NON_CATEGORIZED_COUNT;
+  if (promptCount) {
+    userPrompt += `\nRetorne aproximadamente ${promptCount} ${
       categorized ? "categorias" : "ideias"
     }.`;
   }
 
   const chatResponse = await openai.chat.completions.create({
-    model: "gpt-4o-mini", // ou "gpt-4o", "gpt-4", 
+    model: "gpt-4o-mini", // ou "gpt-4o", "gpt-4"
     messages: [
-      { role: "system", content: systemMessage.trim() },
+      { role: "system", content: systemMessageWithInstructions },
       { role: "user", content: userPrompt.trim() },
     ],
     temperature: 1,
-    // Você pode ajustar max_tokens, top_p etc conforme necessário
   });
 
-  // O conteúdo de resposta deverá ser um JSON; então fazemos parse do texto
   const text = chatResponse.choices?.[0]?.message?.content || "";
-  // Em caso de erro de parse, podemos lançar para ser capturado pelo catch
   let parsed: any;
   try {
     parsed = JSON.parse(text);
@@ -189,8 +208,6 @@ Não inclua nenhuma explicação fora desse JSON. Não coloque comentários, nem
         text
     );
   }
-
-  // Retornamos o objeto exatamente no formato que esperamos
   return parsed;
 }
 
@@ -208,15 +225,31 @@ export async function POST(request: NextRequest) {
 
     // 2) Se chegou aqui, payload é { prefs } ou { prompt + options? }
     const { data } = parsed;
+
     if ("prefs" in data) {
       // — Caso 1: veio { prefs }
       const { prefs } = data as { prefs: PreferencesData };
 
-      // Para gerar a partir de prefs, podemos transformar o objeto prefs em um texto ou JSON
-      // e pedir ao modelo para retornar as ideias/categorias a partir daí.
-      // Exemplo de prompt:
-      const prefsAsJson = JSON.stringify(prefs);
-      const systemMessagePrefs = promptsJson + `
+      // (A) Geramos o “PromptsJson” preenchido a partir das preferências:
+      //     basicamente, cada bloco em promptsJson tem placeholders {…}
+      //     que serão substituídos por prefs[fieldName].
+      const filledPrompts = fillAllPrompts(promptsJson as PromptsJson, prefs);
+
+      // (B) Montamos um systemMessage geral a partir de todos os blocos preenchidos:
+      //     (observe que generateFromPrompt espera receber o filledPrompts
+      //     para concatenar os blocos já preenchidos + instruções adicionais.)
+      //
+      // Opcionalmente, se você quiser um comportamento “diferente” ao usar somente prefs,
+      // basta trocar a chamada a generateFromPrompt por outro prompt genérico.
+      //
+      // Aqui vamos pedir categorias + extraIdeas:
+      const systemMessagePrefs = filledPrompts.blocks
+        .map((blk) => blk.prompt.trim())
+        .join("\n\n");
+
+      const systemMessageWithPrefsInstructions = `
+${systemMessagePrefs}
+
 Você é um assistente que recebe um objeto JSON com preferências de negócio de um usuário (campos como businessName, industry, targetAudience etc.).
 A partir dessas preferências, gere um JSON estruturado contendo:
 1) "categories": lista de categorias (campo "name") e, dentro de cada categoria, um array "ideas" com objetos de ideias (mesmos campos de id, title, description, isFavorite, etc.);
@@ -232,7 +265,7 @@ Não inclua explicações fora do JSON. Obedeça a estrutura exatamente:
           "id": "<string única>",
           "title": "<string>",
           "description": "<string>",
-          "isFavorite": false,
+          "isFavorite": false
           // campos opcionais se relevantes
         }
         // ... ideias
@@ -251,7 +284,9 @@ Não inclua explicações fora do JSON. Obedeça a estrutura exatamente:
     // ... mais ideias extras
   ]
 }
-`;
+`.trim();
+
+      const prefsAsJson = JSON.stringify(prefs);
 
       const userMessagePrefs = `
 Aqui está o objeto de preferências (JSON):
@@ -261,11 +296,12 @@ ${prefsAsJson}
 Gere as categorias e ideias conforme as instruções acima.
       `.trim();
 
+      // (C) Chamamos a OpenAI usando o “systemMessageWithPrefsInstructions”
       const chatResponse = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
-          { role: "system", content: systemMessagePrefs.trim() },
-          { role: "user", content: userMessagePrefs.trim() },
+          { role: "system", content: systemMessageWithPrefsInstructions },
+          { role: "user", content: userMessagePrefs },
         ],
         temperature: 0.7,
       });
@@ -282,7 +318,6 @@ Gere as categorias e ideias conforme as instruções acima.
         );
       }
 
-      // Retornamos exatamente o que o modelo enviou (categories + extraIdeas)
       return NextResponse.json({
         success: true,
         data: parsedPrefs,
@@ -301,12 +336,22 @@ Gere as categorias e ideias conforme as instruções acima.
         };
       };
 
-      // Se não for categorizado, ignoramos o count do usuário e usamos o DEFAULT_NON_CATEGORIZED_COUNT
-      const isCategorized = options?.categorized ?? false;
-      const promptCount = isCategorized
-        ? options?.count
-        : DEFAULT_NON_CATEGORIZED_COUNT;
+      // Vamos supor que o usuário queira usar o mesmo “promptsJson” preenchido com dados default,
+      // ou então passo um objeto vazio para não quebrar fillAllPrompts:
+      // (se você tiver um jeito de saber qual “prefs” usar aqui, pode passar as prefs certas)
+      const dummyPrefs: PreferencesData = {} as any;
 
+      // (A) Preenchemos o promptsJson “cru” usando um objeto vazio (ou padrão)
+      const filledPrompts = fillAllPrompts(promptsJson as PromptsJson, dummyPrefs);
+      console.log(">>> filledPrompts:", JSON.stringify(filledPrompts, null, 2));
+
+
+      // (B) Definimos se é categorizado ou não:
+      const isCategorized = options?.categorized ?? false;
+      const promptCount = isCategorized ? options?.count : DEFAULT_NON_CATEGORIZED_COUNT;
+
+      // (C) Chamamos nossa função geradora, que concatena todos os blocos preenchidos
+      //     + instruções extras para gerar output JSON de “ideas” ou “categories”.
       const results = await generateFromPrompt(prompt, {
         categorized: isCategorized,
         platform: options?.platform,
@@ -314,7 +359,7 @@ Gere as categorias e ideias conforme as instruções acima.
         tone: options?.tone,
         audience: options?.audience,
         count: promptCount,
-      });
+      }, filledPrompts);
 
       if (isCategorized) {
         return NextResponse.json({
