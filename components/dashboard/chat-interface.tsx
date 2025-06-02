@@ -59,16 +59,16 @@ export function ChatInterface() {
   // 2) ESTADOS DE “PRIMEIRO CONTATO” (BLOCO 1)
   // -------------------------------------------------
   // Em qual etapa do bloco 1 o usuário está (0..5).
-  // 0 = enviar mensagem de boas-vindas e pergunta “Seu nome completo:”
-  // 1 = aguardar resposta do nome; depois: pergunta “Seu @ do Instagram:”
-  // 2 = aguardar @ e validar; depois: “Você já usou IA pra criar conteúdo antes?”
-  // 3 = aguardar resposta de IA; validar ambíguo → eventualmente perguntar “Se prefere iniciante/avançado…”
-  //     depois: perguntar “Você entendeu…?”
-  // 4 = enviamos mensagem de marco simbólico + definição de missão 1; marcamos firstContactDone
-  // 5 = “missão 1” está aberta; aguardamos envio da primeira ideia de conteúdo/rascunho
+  // 0 = mensagem de boas-vindas e pergunta “Seu nome completo:”
+  // 1 = aguardando @ do Instagram
+  // 2 = aguardando resposta “sim/​não/​um pouco”
+  // 2.5 = ajuste de nível de IA (iniciante/intermediário/avançado)
+  // 3 = confirmação de entendimento
+  // 4 = mensagem de marco (criador ativado) e instruções da Missão 1
+  // 5 = aguardando primeira ideia de conteúdo (Missão 1)
   const [firstContactStage, setFirstContactStage] = useState<number>(0);
 
-  // Guarda os dados coletados no bloco 1
+  // Dados coletados no bloco 1
   const [firstContactData, setFirstContactData] = useState<{
     name: string;
     instagram: string;
@@ -80,19 +80,54 @@ export function ChatInterface() {
     iaUsage: "",
   });
 
-  // Quando true, o primeiro contato foi concluído e o chat "normal" entra em ação
+  // Quando true, o primeiro contato (bloco 1) foi concluído.
   const [firstContactDone, setFirstContactDone] = useState<boolean>(false);
 
   // -------------------------------------------------
-  // 3) useEffect PARA INICIAR O BLOCO 1
+  // 3) ESTADOS DO BLOCO 4 – CONSTRUÇÃO DE AUTORIDADE E POSICIONAMENTO VIRAL
+  // -------------------------------------------------
+  // Vamos criar um novo estado para controlar cada “stage” do Bloco 4.
+  //   0 = Pergunta “Qual post seu mais repercutiu até agora?”
+  //   1 = Pergunta “Como você se sentiu ao publicar esse post? E ao ver o resultado?”
+  //   2 = Pergunta “O que você acha que mais conectou com o público?”
+  //   3 = Pergunta “Você tem repetido esse tipo de conteúdo ou ainda não?”
+  //     (nesse momento, marcamos tag: nucleo_viral_identificado)
+  //   4 = Desenvolvimento de pilares: mensagem explicativa + tag: pilares_autoridade_ativos
+  //        (apenas envio de texto; a escolha de “quando quiser avançar” será capturada no next stage)
+  //   5 = Pergunta “Escolha um dos pilares (Posicionamento / Conexão / Estilo)”
+  //   6 = Monitoramento de posicionamento: instrução para “Durante a semana, observe...”
+  //        (apenas mensagem; aguardamos resposta de qual conteúdo mais impactou)
+  //   7 = Pergunta “Qual conteúdo mais impactou?” (quando usuário reporta, marcamos tag: ajuste_posicionamento_ativo)
+  //   8 = Fechamento do ciclo: mensagem final + tag: missao4_completa
+  //   null = não estamos no Bloco 4 (fluxo de geração normal)
+  const [block4Stage, setBlock4Stage] = useState<number | null>(null);
+
+  // Armazenamos as respostas do usuário em cada etapa do Bloco 4
+  const [block4Data, setBlock4Data] = useState<{
+    viralPost?: string;
+    feeling?: string;
+    connectionReason?: string;
+    repeatedContent?: string;
+    chosenPillar?: string;
+    mostImpactfulContent?: string;
+  }>({});
+
+  // -------------------------------------------------
+  // 4) useEffect PARA INICIAR O BLOCO 1
   // -------------------------------------------------
   useEffect(() => {
-    // Ao montar, empurramos a mensagem de boas-vindas (stage 0)
     if (firstContactStage === 0) {
       setChatHistory([
         {
           type: "assistant",
-          content: `🎉 Bem-vindo(a) oficialmente ao VIRALGEN – o projeto que transforma pessoas comuns em criadores virais com inteligência artificial.\n\nJá ajudamos milhares de pessoas a saírem do zero e criarem conteúdos que se destacam. Agora é sua vez.\n\nEu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a passo.\n\n*Pra começar, me responde 3 coisas:*\n\n1. **Seu nome completo:**\n2. **Seu @ do Instagram (vai ser seu ID aqui dentro):**\n3. **Você já usou IA pra criar conteúdo antes? (sim / não / um pouco)**\n\n⚠️ Se não entender alguma coisa, digita “ajuda” e eu explico tudo com calma.`,
+          content: `🎉 Bem-vindo(a) oficialmente ao VIRALGEN – o projeto que transforma pessoas comuns em criadores virais com inteligência artificial.\n
+Já ajudamos milhares de pessoas a saírem do zero e criarem conteúdos que se destacam. Agora é sua vez.\n
+Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a passo.\n\n
+*Pra começar, me responde 3 coisas:*\n
+1. **Seu nome completo:**\n
+2. **Seu @ do Instagram (vai ser seu ID aqui dentro):**\n
+3. **Você já usou IA pra criar conteúdo antes? (sim / não / um pouco)**\n\n
+⚠️ Se não entender alguma coisa, digita “ajuda” e eu explico tudo com calma.`,
         },
       ]);
     }
@@ -107,7 +142,7 @@ export function ChatInterface() {
   }, [chatHistory]);
 
   // -------------------------------------------------
-  // 4) useEffect PARA CRÉDITOS (mantive como antes)
+  // 5) useEffect PARA CRÉDITOS (mantive como antes)
   // -------------------------------------------------
   useEffect(() => {
     const loadCredits = () => {
@@ -117,47 +152,56 @@ export function ChatInterface() {
   }, []);
 
   // -------------------------------------------------
-  // 5) FUNÇÃO handleSubmit (agora lida COM DOIS FLUXOS: bloco 1 ou geração normal)
+  // 6) FUNÇÃO handleSubmit
+  //    – Decide se está no Bloco 1, no Bloco 4 ou no fluxo normal de geração de conteúdo
   // -------------------------------------------------
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
 
-    // Se o primeiro contato NÃO estiver concluído, passamos pelo fluxo BLOCO 1
+    // Se ainda não completou o primeiro contato → Bloco 1
     if (!firstContactDone) {
       await handleFirstContactSubmit(prompt.trim());
-      setPrompt(""); // limpamos o campo a cada resposta
+      setPrompt("");
       return;
     }
 
-    // Se chegamos aqui, firstContactDone == true → é o fluxo “normal” de geração de conteúdo:
+    // Se já terminou o Bloco 1 e block4Stage não é null → estamos no Bloco 4
+    if (block4Stage !== null) {
+      await handleBlock4Submit(prompt.trim());
+      setPrompt("");
+      return;
+    }
+
+    // Caso contrário, é o fluxo “normal” de geração de conteúdo
     handleNormalChatSubmit(e);
   };
 
   // -------------------------------------------------
-  // 6) LÓGICA DO FLUXO BLOCO 1
+  // 7) LÓGICA DO FLUXO BLOCO 1 (primeiro contato)
   // -------------------------------------------------
   async function handleFirstContactSubmit(userText: string) {
-    // Se o usuário digitar "ajuda" (ou variações), não tratamos como nome:
+    // Se o usuário digitar "ajuda" (ou variações), mostramos mensagem de ajuda e não avançamos de etapa:
     if (userText.trim().toLowerCase() === "ajuda") {
-      setChatHistory(prev => [
+      setChatHistory((prev) => [
         ...prev,
-        { type: "assistant", content: `🤖 *Como funciona o VIRALGEN?*\n\n1. No primeiro contato, eu peço seu nome, @ do Instagram e se você já usou IA.\n2. Depois, ajustamos seu nível de experiência com IA (iniciante/intermediário/avançado).\n3. Em seguida, você envia sua primeira ideia de conteúdo (Missão 1) e eu ajudo a refiná-la.\n4. Após concluir a Missão 1, seguimos para níveis avançados. Me manda seu nome completo para começarmos!Bora? ` },
+        {
+          type: "assistant",
+          content: `🤖 *Como funciona o VIRALGEN?*\n\n1. No primeiro contato, eu peço seu nome, @ do Instagram e se você já usou IA.\n2. Depois, ajustamos seu nível de experiência com IA (iniciante/intermediário/avançado).\n3. Em seguida, você envia sua primeira ideia de conteúdo (Missão 1) e eu ajudo a refiná-la.\n4. Após concluir a Missão 1, entramos no Bloco 4 (Construção de Autoridade).`,
+        },
       ]);
-      // Não alteramos firstContactStage nem armazenamos nada; permanecemos na mesma etapa (0).
       return;
     }
 
-    // Continua o fluxo normal caso não seja "ajuda":
-    setChatHistory(prev => [...prev, { type: "user", content: userText }]);
+    // Adiciona a mensagem do usuário ao histórico
+    setChatHistory((prev) => [...prev, { type: "user", content: userText }]);
 
     switch (firstContactStage) {
       case 0:
-        // Aqui, queremos aceitar qualquer texto não vazio como nome,
-        // mas nesse ponto já filtramos "ajuda" acima.
-        setFirstContactData(prev => ({ ...prev, name: userText }));
+        // Nome completo
+        setFirstContactData((prev) => ({ ...prev, name: userText }));
         setFirstContactStage(1);
-        setChatHistory(prev => [
+        setChatHistory((prev) => [
           ...prev,
           {
             type: "assistant",
@@ -166,13 +210,11 @@ export function ChatInterface() {
         ]);
         break;
 
-      // ---------------------------------------------
       case 1:
-        // Aqui esperamos o @ do Instagram. Validamos se começa com “@” e não tem espaços.
+        // @ do Instagram
         const ig = userText;
         const igValid = ig.startsWith("@") && !ig.includes(" ");
         if (!igValid) {
-          // Reenvia a mesma pergunta até ser válido
           setChatHistory((prev) => [
             ...prev,
             {
@@ -180,9 +222,7 @@ export function ChatInterface() {
               content: `Consegue mandar seu @ certinho? Algo como **@seunome** ou **@seudominio**. Ele será usado pra acompanhar seu progresso aqui dentro.`,
             },
           ]);
-          // mantemos firstContactStage = 1
         } else {
-          // Salvamos e avançamos para a próxima etapa
           setFirstContactData((prev) => ({ ...prev, instagram: ig }));
           setFirstContactStage(2);
           setChatHistory((prev) => [
@@ -195,18 +235,16 @@ export function ChatInterface() {
         }
         break;
 
-      // ---------------------------------------------
       case 2:
-        // Aqui esperamos “sim”, “não” ou “um pouco”. Se vier diferente, consideramos ambíguo.
+        // Resposta “sim” | “não” | “um pouco” ou ambíguo
         const respostaIA = userText.toLowerCase();
         if (
           respostaIA !== "sim" &&
           respostaIA !== "não" &&
-          respostaIA !== "nao" &&
-          respostaIA !== "um pouco" &&
-          respostaIA !== "umpouco"
+          respostaIA !== "nao"
+
         ) {
-          // Resposta ambígua: tratamos como intermediário e perguntamos se prefere iniciante ou avançado
+          // Ambíguo → tratamos como intermediário e pedimos ajuste de nível
           setFirstContactData((prev) => ({ ...prev, iaUsage: "intermediário" }));
           setChatHistory((prev) => [
             ...prev,
@@ -215,14 +253,11 @@ export function ChatInterface() {
               content: `Legal! Então vou te considerar como **intermediário** e te ajudar a destravar essa parte. Se preferir que eu te trate como **iniciante** ou **avançado**, me avisa.`,
             },
           ]);
-          // Mantemos na mesma etapa (2), mas agora esperamos “iniciante” | “intermediário” | “avançado”
-          setFirstContactStage(2.5); // 2.5 = “etapa de ajuste de nível de IA”
+          setFirstContactStage(2.5);
         } else {
-          // Se a resposta for exatamente “sim” | “não” | “um pouco”
-          // Padronizamos “nao” para “não”
+          // Padroniza “nao” para “não”
           let padronizado = respostaIA === "nao" ? "não" : respostaIA;
           setFirstContactData((prev) => ({ ...prev, iaUsage: padronizado }));
-          // Passamos direto para a confirmação de entendimento
           setFirstContactStage(3);
           setChatHistory((prev) => [
             ...prev,
@@ -234,12 +269,10 @@ export function ChatInterface() {
         }
         break;
 
-      // ---------------------------------------------
       case 2.5:
-        // Estamos na subetapa de ajuste de nível: esperamos “iniciante”, “intermediário” ou “avançado”
+        // Ajuste de nível: “iniciante” | “intermediário” | “avançado”
         const nivel = userText.toLowerCase();
         if (nivel !== "iniciante" && nivel !== "intermediário" && nivel !== "avançado") {
-          // Se não for nenhum dos três, repete a pergunta
           setChatHistory((prev) => [
             ...prev,
             {
@@ -247,9 +280,7 @@ export function ChatInterface() {
               content: `Desculpa, não entendi. Se prefere que eu te trate como iniciante, intermediário ou avançado, me diz exatamente uma dessas palavras.`,
             },
           ]);
-          // mantemos firstContactStage = 2.5
         } else {
-          // Salvamos e avançamos para confirmação de entendimento
           setFirstContactData((prev) => ({ ...prev, iaLevel: nivel }));
           setFirstContactStage(3);
           setChatHistory((prev) => [
@@ -262,12 +293,14 @@ export function ChatInterface() {
         }
         break;
 
-      // ---------------------------------------------
       case 3:
-        // Esperamos “entendi” ou “não entendi”
+        // Confirmação “entendi” ou “não entendi”
         const confirmacao = userText.toLowerCase();
-        if (confirmacao !== "entendi" && confirmacao !== "não entendi" && confirmacao !== "nao entendi") {
-          // Qualquer outra resposta, pedimos para o usuário responder exatamente.
+        if (
+          confirmacao !== "entendi" &&
+          confirmacao !== "não entendi" &&
+          confirmacao !== "nao entendi"
+        ) {
           setChatHistory((prev) => [
             ...prev,
             {
@@ -276,7 +309,6 @@ export function ChatInterface() {
             },
           ]);
         } else if (confirmacao === "não entendi" || confirmacao === "nao entendi") {
-          // Reexplicamos todo o conceito
           setChatHistory((prev) => [
             ...prev,
             {
@@ -284,41 +316,29 @@ export function ChatInterface() {
               content: `Tudo bem, vou detalhar de novo:\n\n1. Você vai me enviar ideias ou rascunhos de conteúdo (texto, imagem, vídeo) e eu vou te ajudar a refinar.\n2. Vamos passo a passo: desde encontrar o tema até otimizar o texto e a estratégia de publicação.\n3. A ideia é você sair daqui sabendo usar IA de verdade para criar posts virais.\n\nMe fala “entendi” quando fizer sentido para continuarmos.`,
             },
           ]);
-          // mantém firstContactStage = 3
+          // permanece em firstContactStage = 3
         } else {
-          // Usuário disse “entendi”
-          setFirstContactStage(4);
+          ;
+          setFirstContactDone(true);
+          setFirstContactStage(5);
+          // Ao terminar a Missão 1, iniciamos o Bloco 4 (stage 0):
+          setBlock4Stage(0);
+
+          // Pergunta inicial do Bloco 4:
           setChatHistory((prev) => [
             ...prev,
             {
               type: "assistant",
-              content: `Perfeito. A partir de agora, você é oficialmente um **Criador Viral em Ativação**. Sua missão começa agora.\n\n*Tag aplicada: criador_ativado*`,
-            },
-            {
-              type: "assistant",
-              content: `Você terá cumprido sua **Missão 1** quando:\n\n- Me mandar aqui a sua primeira ideia de conteúdo ou rascunho criado com IA.\n\nQuando fizer isso, te levo pro **Nível 2** com ajustes estratégicos e desbloqueios especiais.\n\n*Tag aplicada: missao1_completa*`,
+              content: `🎯 Identificação do Ponto Forte Viral*\n\nQual post seu mais repercutiu até agora?`,
             },
           ]);
-          // marcamos o primeiro contato como concluído, mas aguardamos a primeira ideia (stage 5)
-          setFirstContactDone(true);
-          setFirstContactStage(5);
         }
         break;
 
-      // ---------------------------------------------
       case 5:
-        // Estamos aguardando a primeira ideia de conteúdo / rascunho com IA (Missão 1).
-        // Assim que o usuário enviar qualquer texto aqui, consideramos sua Missão 1 concluída.
-        // Podemos tocar no nível 2 (mas não implementaremos o nível 2 aqui; assumimos que você vai fazer no Bloco 2).
-        setChatHistory((prev) => [
-          ...prev,
-          {
-            type: "assistant",
-            content: `🎉 Excelente! Você completou sua Missão 1 enviando sua primeira ideia/rascunho. Agora vamos para o Nível 2 com ajustes estratégicos e desbloqueios especiais!`,
-          },
-        ]);
-        // LIGAÇÃO: daqui em diante, o fluxo “normal” de geração de conteúdo (você pode exibir sugestões ou deixar o usuário começar a pedir ideias).
-        // Não alteramos firstContactDone (continua true) nem o stage.  
+        // Já recebemos a primeira ideia de conteúdo → aqui, simplesmente mostramos feedback,
+        // mas, como iniciamos o Bloco 4 no case 3, não vamos chegar aqui diretamente.
+        // Deixamos apenas para referência futura, mas, na prática, as submissões irão para handleBlock4Submit.
         break;
 
       default:
@@ -327,13 +347,104 @@ export function ChatInterface() {
   }
 
   // -------------------------------------------------
-  // 7) FLUXO “NORMAL” DE GERAÇÃO DE CONTEÚDO (já existente)
+  // 8) LÓGICA DO BLOCO 4
+  // -------------------------------------------------
+  async function handleBlock4Submit(userText: string) {
+    // Adiciona a mensagem do usuário ao histórico
+    setChatHistory((prev) => [...prev, { type: "user", content: userText }]);
+
+    switch (block4Stage) {
+      case 0:
+        // Resposta: “Qual post seu mais repercutiu até agora?”
+        setBlock4Data((prev) => ({ ...prev, viralPost: userText }));
+        setBlock4Stage(1);
+        setChatHistory((prev) => [
+          ...prev,
+          {
+            type: "assistant",
+            content: `Como você se sentiu ao publicar esse post? E ao ver o resultado?`,
+          },
+        ]);
+        break;
+
+      case 1:
+        // Resposta: “Como você se sentiu ao publicar esse post? E ao ver o resultado?”
+        setBlock4Data((prev) => ({ ...prev, feeling: userText }));
+        setBlock4Stage(2);
+        setChatHistory((prev) => [
+          ...prev,
+          {
+            type: "assistant",
+            content: `O que você acha que mais conectou com o público?`,
+          },
+        ]);
+        break;
+
+      case 2:
+        // Resposta: “O que você acha que mais conectou com o público?”
+        setBlock4Data((prev) => ({ ...prev, connectionReason: userText }));
+        setBlock4Stage(3);
+        setChatHistory((prev) => [
+          ...prev,
+          {
+            type: "assistant",
+            content: `Você tem repetido esse tipo de conteúdo ou ainda não?`,
+          },
+        ]);
+        break;
+
+      case 3:
+        // Resposta: “Você tem repetido esse tipo de conteúdo ou ainda não?”
+        setBlock4Data((prev) => ({ ...prev, repeatedContent: userText }));
+        // Tag: nucleo_viral_identificado
+        setChatHistory((prev) => [
+          ...prev,
+          {
+            type: "assistant",
+            content: `🏗️ *Desenvolvimento de Pilares de Autoridade*\n\nA partir do seu núcleo viral, vamos construir seus 3 pilares de autoridade:\n\n- Conteúdos que te posicionam como referência\n- Conteúdos que geram conexão emocional\n- Conteúdos que mostram sua identidade visual, tom de voz e diferencial competitivo\n\nQuando quiser avançar, me diz e eu trago ideias estratégicas prontas para esses pilares.`,
+          },
+        ]);
+        setBlock4Stage(4);
+        break;
+
+      case 4:
+        // O usuário apenas disse “quando quiser avançar” (ou algo equivalente).
+        // Agora devemos perguntar sobre qual pilar quer focar.
+        setBlock4Stage(7);
+        setChatHistory((prev) => [
+          ...prev,
+          {
+            type: "assistant",
+            content: `🎯 *Definição do Foco Semanal (Ciclo de Posicionamento)*\n\nEscolha um dos pilares para ser sua prioridade nos próximos dias:\n\n- Posicionamento\n- Conexão\n- Estilo\n\nQuando quiser prosseguir, responda exatamente um desses nomes.`,
+          },
+        ]);
+        break;
+
+
+      case 7:
+        // O usuário indicou “qual conteúdo mais impactou”
+        // Tag: ajuste_posicionamento_ativo
+        setChatHistory((prev) => [
+          ...prev,
+          {
+            type: "assistant",
+            content: `🏁 *Conclusão do Ciclo de Posicionamento*\n\nMissão concluída. Você começou a ser reconhecido. Agora é hora de se tornar inesquecível.\n\nSua voz já influencia. Agora vamos moldar o espaço que ela vai ocupar no seu nicho, com intenção e estratégia.`,
+          },
+        ]);
+        setBlock4Stage(null);
+
+        break;
+
+    }
+  }
+
+  // -------------------------------------------------
+  // 9) FLUXO “NORMAL” DE GERAÇÃO DE CONTEÚDO (já existente)
   // -------------------------------------------------
   const handleNormalChatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
 
-    // Limpa resultados antigos, coloca loading, zera erros
     setContentIdeas([]);
     setCategorizedContent([]);
     setIsLoading(true);
@@ -425,7 +536,7 @@ export function ChatInterface() {
 
       toast({
         title: "Ideas Generated!",
-        description: `Viral content ideas have been created for you.`,
+        description: `Viral content ideas have been created for você.`,
       });
     } catch (err) {
       console.error("Error generating content:", err);
@@ -454,7 +565,7 @@ export function ChatInterface() {
   };
 
   // -------------------------------------------------
-  // 8) Demais handlers (favoritar, selecionar prompt, clear results)
+  // 10) Demais handlers (favoritar, selecionar prompt, clear results)
   // -------------------------------------------------
   const handleToggleFavorite = (idea: ContentIdea) => {
     const updatedIdea = toggleFavorite(idea);
@@ -493,7 +604,7 @@ export function ChatInterface() {
   };
 
   // -------------------------------------------------
-  // 9) RENDER (JSX)
+  // 11) RENDER (JSX)
   // -------------------------------------------------
   return (
     <Card className="border-2 border-primary/20 rounded-xl shadow-md overflow-hidden">
@@ -504,10 +615,11 @@ export function ChatInterface() {
             Make Viral with AI
           </h2>
           <p className="text-muted-foreground">
-            {/** Se ainda não passou pelo primeiro contato, mostramos instruções mais gerais */}
-            {firstContactDone
+            {firstContactDone && block4Stage === null
               ? "Conteúdos virais prontos para sua estratégia!"
-              : "Vamos começar com sua ativação no VIRALGEN"}
+              : !firstContactDone
+                ? "Vamos começar com sua ativação no VIRALGEN"
+                : "Estamos construindo sua autoridade e posicionamento viral"}
           </p>
         </div>
 
@@ -521,11 +633,10 @@ export function ChatInterface() {
                   {chatHistory.map((message, index) => (
                     <div
                       key={index}
-                      className={`flex ${message.type === "user" ? "justify-end" : "justify-start"
-                        }`}
+                      className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}
                     >
                       <div
-                        className={`max-w-[80%] rounded-xl p-3 ${message.type === "user"
+                        className={`max-w-[80%] rounded-xl p-3 whitespace-pre-wrap ${message.type === "user"
                           ? "bg-primary text-primary-foreground"
                           : "bg-muted"
                           }`}
@@ -543,16 +654,18 @@ export function ChatInterface() {
                   </div>
                   <h3 className="text-lg font-medium mb-2">Start a Conversation</h3>
                   <p className="text-muted-foreground max-w-md">
-                    {firstContactDone
-                      ? "Peça ideias de conteúdo ou comece a conversa aqui."
-                      : "Responda às perguntas para ativar seu perfil."}
+                    {!firstContactDone
+                      ? "Responda às perguntas para ativar seu perfil."
+                      : block4Stage !== null
+                        ? "Siga as instruções para evoluir sua autoridade e posicionamento."
+                        : "Peça ideias de conteúdo ou comece a conversa aqui."}
                   </p>
                 </div>
               )}
             </div>
 
-            {/* Se o bloco 1 já terminou, mostramos prompts sugeridos e opções */}
-            {firstContactDone && (
+            {/* Se o Bloco 1 já terminou e o Bloco 4 estiver concluído, mostramos prompts sugeridos e opções */}
+            {firstContactDone && block4Stage === null && (
               <>
                 <SuggestedPrompts onSelectPrompt={handleSelectPrompt} />
 
@@ -568,9 +681,11 @@ export function ChatInterface() {
               <div className="relative">
                 <Textarea
                   placeholder={
-                    firstContactDone
-                      ? "O que você precisa hoje?"
-                      : "Digite aqui sua resposta..."
+                    !firstContactDone
+                      ? "Digite aqui sua resposta..."
+                      : block4Stage !== null
+                        ? "Digite aqui sua resposta para continuar o Bloco 4..."
+                        : "O que você precisa hoje?"
                   }
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
@@ -601,7 +716,7 @@ export function ChatInterface() {
                     </span>
                   </span>
 
-                  {generationOptions.categorized && firstContactDone && (
+                  {generationOptions.categorized && firstContactDone && block4Stage === null && (
                     <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                       Categorized Mode
                     </Badge>
@@ -610,7 +725,8 @@ export function ChatInterface() {
 
                 <div className="flex items-center gap-2">
                   {(contentIdeas.length > 0 || categorizedContent.length > 0) &&
-                    firstContactDone && (
+                    firstContactDone &&
+                    block4Stage === null && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -631,14 +747,15 @@ export function ChatInterface() {
             <div className="rounded-xl border-2 border-primary/10 bg-card p-4 h-full">
               <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-secondary" />
-                {firstContactDone ? "Generated Ideas" : "Bem‐vind@ ao VIRALGEN"}
+                {!firstContactDone
+                  ? "Bem‐vind@ ao VIRALGEN"
+                  : block4Stage !== null
+                    ? "Bloco 4: Autoridade e Posicionamento"
+                    : "Generated Ideas"}
               </h3>
 
-              {/*
-                Se ainda não concluiu o primeiro contato, não mostramos resultados de geração.
-                Mostramos instruções ou placeholder. 
-              */}
               {!firstContactDone ? (
+                // Antes de concluir o Bloco 1
                 <div className="flex flex-col items-center justify-center h-[400px] text-center">
                   <div className="inline-block p-4 rounded-full bg-secondary/10 mb-4">
                     <Sparkles className="h-8 w-8 text-secondary" />
@@ -647,14 +764,19 @@ export function ChatInterface() {
                     Aguardando seu primeiro contato
                   </h3>
                   <p className="text-muted-foreground max-w-md">
-                    {`
-                      Responda às perguntas acima para ativar seu perfil no Viralgen.
-                      Assim que terminar, você poderá gerar ideias de conteúdo normalmente.
-                    `}
+                    Responda às perguntas acima para ativar seu perfil no Viralgen.
+                    Assim que terminar, você entrará no Bloco 4 de autoridade.
+                  </p>
+                </div>
+              ) : block4Stage !== null ? (
+                // Durante o Bloco 4, mostra apenas histórico (não há “resultados de geração”)
+                <div className="flex flex-col items-center justify-center h-[400px] text-center">
+                  <p className="text-muted-foreground">
+                    Continue respondendo as instruções para concluir o Bloco 4.
                   </p>
                 </div>
               ) : isLoading ? (
-                // Se estiver gerando ideias de conteúdo (após firstContactDone)
+                // Fluxo normal de geração, após Bloco 4 concluído
                 <div className="flex flex-col items-center justify-center h-[400px]">
                   <div className="relative w-16 h-16">
                     <div className="absolute inset-0 rounded-full border-4 border-primary/20"></div>
@@ -732,5 +854,6 @@ export function ChatInterface() {
         </div>
       </CardContent>
     </Card>
-  );
+  )
 }
+;
