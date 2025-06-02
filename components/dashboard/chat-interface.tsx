@@ -138,18 +138,26 @@ export function ChatInterface() {
   // 6) LÓGICA DO FLUXO BLOCO 1
   // -------------------------------------------------
   async function handleFirstContactSubmit(userText: string) {
-    // Adiciona a mensagem do usuário ao histórico
-    setChatHistory((prev) => [...prev, { type: "user", content: userText }]);
+    // Se o usuário digitar "ajuda" (ou variações), não tratamos como nome:
+    if (userText.trim().toLowerCase() === "ajuda") {
+      setChatHistory(prev => [
+        ...prev,
+        { type: "assistant", content: `🤖 *Como funciona o VIRALGEN?*\n\n1. No primeiro contato, eu peço seu nome, @ do Instagram e se você já usou IA.\n2. Depois, ajustamos seu nível de experiência com IA (iniciante/intermediário/avançado).\n3. Em seguida, você envia sua primeira ideia de conteúdo (Missão 1) e eu ajudo a refiná-la.\n4. Após concluir a Missão 1, seguimos para níveis avançados. Me manda seu nome completo para começarmos!Bora? ` },
+      ]);
+      // Não alteramos firstContactStage nem armazenamos nada; permanecemos na mesma etapa (0).
+      return;
+    }
 
-    // Dependendo da etapa, vamos validar e gerar a resposta do agente
+    // Continua o fluxo normal caso não seja "ajuda":
+    setChatHistory(prev => [...prev, { type: "user", content: userText }]);
+
     switch (firstContactStage) {
-      // ---------------------------------------------
       case 0:
-        // Aqui esperamos o nome completo. Qualquer texto não‐vazio é aceito.
-        setFirstContactData((prev) => ({ ...prev, name: userText }));
-        // Avançamos para stage 1: perguntar o @ do Instagram
+        // Aqui, queremos aceitar qualquer texto não vazio como nome,
+        // mas nesse ponto já filtramos "ajuda" acima.
+        setFirstContactData(prev => ({ ...prev, name: userText }));
         setFirstContactStage(1);
-        setChatHistory((prev) => [
+        setChatHistory(prev => [
           ...prev,
           {
             type: "assistant",
@@ -368,9 +376,8 @@ export function ChatInterface() {
           const newHistory = [...prev];
           newHistory[newHistory.length - 1] = {
             type: "assistant",
-            content: `I've generated ${categories.length} categories of content ideas based on your prompt. Each category contains ${
-              categories[0]?.ideas.length ?? 1
-            } idea(s).`,
+            content: `I've generated ${categories.length} categories of content ideas based on your prompt. Each category contains ${categories[0]?.ideas.length ?? 1
+              } idea(s).`,
           };
           return newHistory;
         });
@@ -514,16 +521,14 @@ export function ChatInterface() {
                   {chatHistory.map((message, index) => (
                     <div
                       key={index}
-                      className={`flex ${
-                        message.type === "user" ? "justify-end" : "justify-start"
-                      }`}
+                      className={`flex ${message.type === "user" ? "justify-end" : "justify-start"
+                        }`}
                     >
                       <div
-                        className={`max-w-[80%] rounded-xl p-3 ${
-                          message.type === "user"
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted"
-                        }`}
+                        className={`max-w-[80%] rounded-xl p-3 ${message.type === "user"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted"
+                          }`}
                       >
                         {message.content}
                       </div>
