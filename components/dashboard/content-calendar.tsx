@@ -22,7 +22,7 @@ import { toast } from "@/components/ui/use-toast"
 import { getFavorites } from "@/utils/favorites"
 import { ContentIdeaCard } from "@/components/dashboard/content-idea-card"
 import { PlusCircle, CalendarIcon, Clock, Trash2, Edit, AlertCircle } from "lucide-react"
-import type { ContentIdea } from "@/app/actions/generate-content"
+import type { ContentIdea } from "@/app/(private)/dashboard/chat/type"
 
 interface ScheduledContent {
   id: string
