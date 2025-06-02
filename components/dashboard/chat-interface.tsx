@@ -142,7 +142,7 @@ export function ChatInterface() {
     if (userText.trim().toLowerCase() === "ajuda") {
       setChatHistory(prev => [
         ...prev,
-        { type: "assistant", content: `🤖 *Como funciona o VIRALGEN?*\n\n1. No primeiro contato, eu peço seu nome, @ do Instagram e se você já usou IA.\n2. Depois, ajustamos seu nível de experiência com IA (iniciante/intermediário/avançado).\n3. Em seguida, você envia sua primeira ideia de conteúdo (Missão 1) e eu ajudo a refiná-la.\n4. Após concluir a Missão 1, seguimos para níveis avançados.` },
+        { type: "assistant", content: `🤖 *Como funciona o VIRALGEN?*\n\n1. No primeiro contato, eu peço seu nome, @ do Instagram e se você já usou IA.\n2. Depois, ajustamos seu nível de experiência com IA (iniciante/intermediário/avançado).\n3. Em seguida, você envia sua primeira ideia de conteúdo (Missão 1) e eu ajudo a refiná-la.\n4. Após concluir a Missão 1, seguimos para níveis avançados. Me manda seu nome completo para começarmos!Bora? ` },
       ]);
       // Não alteramos firstContactStage nem armazenamos nada; permanecemos na mesma etapa (0).
       return;
@@ -526,8 +526,8 @@ export function ChatInterface() {
                     >
                       <div
                         className={`max-w-[80%] rounded-xl p-3 ${message.type === "user"
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted"
                           }`}
                       >
                         {message.content}
