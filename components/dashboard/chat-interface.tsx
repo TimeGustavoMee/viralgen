@@ -241,9 +241,8 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
         if (
           respostaIA !== "sim" &&
           respostaIA !== "não" &&
-          respostaIA !== "nao" &&
-          respostaIA !== "um pouco" &&
-          respostaIA !== "umpouco"
+          respostaIA !== "nao"
+
         ) {
           // Ambíguo → tratamos como intermediário e pedimos ajuste de nível
           setFirstContactData((prev) => ({ ...prev, iaUsage: "intermediário" }));
