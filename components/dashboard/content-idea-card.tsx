@@ -62,15 +62,15 @@ export function ContentIdeaCard({
     idea.difficulty === "easy"
       ? "bg-green-500/10 text-green-500 border-green-500/20"
       : idea.difficulty === "medium"
-      ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
-      : "bg-red-500/10 text-red-500 border-red-500/20";
+        ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
+        : "bg-red-500/10 text-red-500 border-red-500/20";
 
   // Determine engagement color
   const engagementColor = idea.estimatedEngagement?.includes("High")
     ? "bg-green-500/10 text-green-500 border-green-500/20"
     : idea.estimatedEngagement?.includes("Medium")
-    ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
-    : "bg-blue-500/10 text-blue-500 border-blue-500/20";
+      ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
+      : "bg-blue-500/10 text-blue-500 border-blue-500/20";
 
   // If compact mode: only title, description (clamped), favorite + copy
   if (compact) {
@@ -89,9 +89,8 @@ export function ContentIdeaCard({
                     onClick={() => onToggleFavorite(idea)}
                   >
                     <Heart
-                      className={`h-4 w-4 ${
-                        idea.isFavorite ? "fill-secondary text-secondary" : ""
-                      }`}
+                      className={`h-4 w-4 ${idea.isFavorite ? "fill-secondary text-secondary" : ""
+                        }`}
                     />
                     <span className="sr-only">Favorite</span>
                   </Button>
@@ -173,9 +172,8 @@ export function ContentIdeaCard({
                   onClick={() => onToggleFavorite(idea)}
                 >
                   <Heart
-                    className={`h-4 w-4 ${
-                      idea.isFavorite ? "fill-secondary text-secondary" : ""
-                    }`}
+                    className={`h-4 w-4 ${idea.isFavorite ? "fill-secondary text-secondary" : ""
+                      }`}
                   />
                   <span className="sr-only">Favorite</span>
                 </Button>
@@ -249,8 +247,8 @@ export function ContentIdeaCard({
             {idea.difficulty === "easy"
               ? "Easy to Create"
               : idea.difficulty === "medium"
-              ? "Medium Difficulty"
-              : "Advanced"}
+                ? "Medium Difficulty"
+                : "Advanced"}
           </Badge>
         )}
 
@@ -295,7 +293,7 @@ export function ContentIdeaCard({
             transition={{ duration: 0.3 }}
             className="overflow-hidden"
           >
-            <div className="pt-3 border-t mt-3 space-y-4 text-gray-600">
+            <div className="pt-3 border-t mt-3 space-y-4 text-gray-600 dark:text-white">
               {/* Contexto & Justificativa */}
               {idea.context && (
                 <div>
