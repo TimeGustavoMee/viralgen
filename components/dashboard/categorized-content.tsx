@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ContentIdeaCard } from "@/components/dashboard/content-idea-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -18,11 +18,25 @@ export function CategorizedContent({
   categories,
   onToggleFavorite,
 }: CategorizedContentProps) {
-  const [activeTab, setActiveTab] = useState(categories[0]?.name || "");
+  const [activeTab, setActiveTab] = useState<string>(() => categories[0]?.name || "");
+
+  useEffect(() => {
+    if (categories.length > 0) {
+      setActiveTab(categories[0].name);
+    }
+  }, [categories]);
+
+  if (!categories || categories.length === 0) {
+    return (
+      <p className="text-muted-foreground text-center mt-4">
+        Nenhuma categoria encontrada.
+      </p>
+    );
+  }
 
   return (
     <div className="space-y-4">
-      <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <ScrollArea className="w-full">
           <TabsList className="inline-flex w-full justify-start p-1 bg-muted">
             {categories.map((category) => (
@@ -43,7 +57,7 @@ export function CategorizedContent({
             <div className="space-y-4">
               {category.ideas.map((idea, index) => (
                 <motion.div
-                  key={idea.id}
+                  key={idea.id || `${category.name}-${index}`}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
