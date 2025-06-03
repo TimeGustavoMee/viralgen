@@ -43,9 +43,9 @@ const openai = new OpenAI();
 const DEFAULT_NON_CATEGORIZED_COUNT = 5; // Garante entre 1 e 5 ideias
 
 /**
- * Função auxiliar que gera as ideias a partir de um prompt genérico.
- * Aqui vamos reaproveitar o mesmo “systemMessage” de todos os blocos preenchidos
- * via fillAllPrompts(...) + instruções adicionais.
+ * Função auxiliar que gera as ideias a partir de um prompt genérico,
+ * instruindo o modelo a produzir saídas extensas, detalhadas e em passo-a-passo,
+ * usando **somente aspas duplas ASCII** para todos os campos de texto.
  */
 async function generateFromPrompt(
   // “prompt” genérico que o usuário enviou (pode vir de `promptOptionsBodySchema`)
@@ -75,6 +75,9 @@ async function generateFromPrompt(
     bestTimeToPost?: string;
     targetAudience?: string;
     variations?: string[];
+    steps?: string[];    // campo extra para passo-a-passo
+    examples?: string[]; // campo extra para exemplos práticos
+    context?: string;    // campo extra para contexto e justificativa
   }>;
   categories?: Array<{
     name: string;
@@ -92,36 +95,46 @@ async function generateFromPrompt(
       bestTimeToPost?: string;
       targetAudience?: string;
       variations?: string[];
+      steps?: string[];
+      examples?: string[];
+      context?: string;
     }>;
   }>;
 }> {
-  // (1) Concatenamos todos os “prompts” preenchidos de cada bloco
-  //     num único systemMessage, separados por 2 quebras de linha.
+  // (1) Concatena todos os prompts preenchidos
   const systemMessage = filledPrompts.blocks
     .map((blk) => blk.prompt.trim())
     .join("\n\n");
 
-  // (2) Adicionamos instruções fixas para o ChatGPT seguir “sempre JSON”
+  // (2) Instruções adicionais para JSON + uso de ASPAS DUPLAS ASCII
   const systemMessageWithInstructions = `
 ${systemMessage}
 
-Você é um assistente especializado em gerar ideias de conteúdo para mídias sociais e marketing digital.
-Você sempre responderá com JSON válido (sem explicações em texto), seguindo exatamente esta estrutura:
+Você é um assistente que **sempre retorna JSON válido usando exclusivamente ASPAS DUPLAS ASCII (\"), sem aspas curvas (“ ”) nem texto extra fora do JSON**. Gere as ideias seguindo exatamente este formato:
 
-Se for requisitado sem categorização:
 {
   "ideas": [
     {
       "id": "<string única>",
       "title": "<título da ideia>",
       "description": "<descrição da ideia>",
+      "context": "<explicação de contexto e justificativa: por que essa ideia faz sentido>",
+      "steps": [
+        "<passo 1 detalhado para implementar a ideia>",
+        "<passo 2 detalhado>",
+        "... outros passos em ordem sequencial"
+      ],
+      "examples": [
+        "<exemplo prático de aplicação 1>",
+        "<exemplo prático de aplicação 2>"
+      ],
       "isFavorite": false,
       // campos opcionais abaixo (incluir apenas se fizer sentido):
       "format": "<ex: vídeo, texto, imagem>",
       "platform": "<ex: Instagram, LinkedIn, etc>",
       "tags": ["<tag1>", "<tag2>"],
       "estimatedEngagement": "<ex: Alto, Médio, Baixo>",
-      "difficulty": "<\\"easy\\" | \\"medium\\" | \\"hard\\">",
+      "difficulty": "<\"easy\" | \"medium\" | \"hard\">",
       "timeToCreate": "<ex: 2h, 30m>",
       "bestTimeToPost": "<ex: Manhã, Tarde, Noite>",
       "targetAudience": "<descrição do público>",
@@ -141,8 +154,18 @@ Se for requisitado com categorização (options.categorized = true):
           "id": "<string única>",
           "title": "<título da ideia>",
           "description": "<descrição da ideia>",
-          "isFavorite": false,
-          // mesmos campos opcionais de acima
+          "context": "<explicação de contexto e justificativa>",
+          "steps": [
+            "<passo 1>",
+            "<passo 2>",
+            "... outros passos"
+          ],
+          "examples": [
+            "<exemplo prático 1>",
+            "<exemplo prático 2>"
+          ],
+          "isFavorite": false
+          // mesmos campos opcionais de cima
         }
         // ... mais ideias
       ]
@@ -151,8 +174,15 @@ Se for requisitado com categorização (options.categorized = true):
   ]
 }
 
-Não inclua nenhuma explicação fora desse JSON. Não coloque comentários, nem texto adicional.
-  `.trim();
+**Para cada ideia, forneça**:
+1. **Contexto e justificativa**: explique por que essa ideia é relevante para o público-alvo e como se conecta com o objetivo do usuário.
+2. **Descrição detalhada**: detalhe em profundidade o que a ideia envolve.
+3. **Passos de implementação**: liste, em ordem sequencial, instruções claras e acionáveis para implementar a ideia do início ao fim.
+4. **Exemplos práticos de aplicação**: apresente no mínimo um exemplo concreto de como essa ideia foi ou poderia ser aplicada.
+5. **Variações e customizações**: sugira alternativas ou adaptações que o usuário pode considerar.
+
+**NÃO inclua texto nem explicações fora da estrutura JSON acima**.  
+`.trim();
 
   const {
     categorized = false,
@@ -163,9 +193,8 @@ Não inclua nenhuma explicação fora desse JSON. Não coloque comentários, nem
     count,
   } = options;
 
-  let userPrompt = `Gere ${
-    categorized ? "categorias de ideias" : "ideias"
-  } com base neste input: "${prompt}"`;
+  let userPrompt = `Gere ${categorized ? "categorias de ideias" : "ideias"
+    } com base neste input: "${prompt}"`;
 
   if (platform) {
     userPrompt += `\nPlataforma preferida: ${platform}.`;
@@ -183,9 +212,8 @@ Não inclua nenhuma explicação fora desse JSON. Não coloque comentários, nem
   // Se count for passado, sobrescrevemos; senão, usamos DEFAULT_NON_CATEGORIZED_COUNT
   const promptCount = categorized ? count : DEFAULT_NON_CATEGORIZED_COUNT;
   if (promptCount) {
-    userPrompt += `\nRetorne aproximadamente ${promptCount} ${
-      categorized ? "categorias" : "ideias"
-    }.`;
+    userPrompt += `\nRetorne aproximadamente ${promptCount} ${categorized ? "categorias" : "ideias"
+      } extensas e detalhadas.`;
   }
 
   const chatResponse = await openai.chat.completions.create({
@@ -195,17 +223,26 @@ Não inclua nenhuma explicação fora desse JSON. Não coloque comentários, nem
       { role: "user", content: userPrompt.trim() },
     ],
     temperature: 1,
+    max_tokens: 2048, // garante resposta longa o suficiente
   });
 
+  // 1) Obtém texto bruto
   const text = chatResponse.choices?.[0]?.message?.content || "";
+
+  // 2) Substitui eventuais aspas curvas por aspas duplas ASCII
+  const cleaned = text
+    .replace(/[“”]/g, '"')  // aspas curvas para "
+    .replace(/‘|’/g, "'");  // aspas simples curvas para '
+
+  // 3) Converte para JSON
   let parsed: any;
   try {
-    parsed = JSON.parse(text);
+    parsed = JSON.parse(cleaned);
   } catch (err) {
-    console.error("Erro ao converter resposta da OpenAI em JSON:", text);
+    console.error("Falha ao converter resposta da OpenAI em JSON:", cleaned);
     throw new Error(
-      "Falha ao processar a resposta da OpenAI como JSON válido. Conteúdo recebido: " +
-        text
+      "Falha ao processar a resposta da OpenAI como JSON válido. Conteúdo recebido:\n" +
+      cleaned
     );
   }
   return parsed;
@@ -231,18 +268,13 @@ export async function POST(request: NextRequest) {
       const { prefs } = data as { prefs: PreferencesData };
 
       // (A) Geramos o “PromptsJson” preenchido a partir das preferências:
-      //     basicamente, cada bloco em promptsJson tem placeholders {…}
-      //     que serão substituídos por prefs[fieldName].
+      //     cada bloco em promptsJson tem placeholders {…} que serão substituídos por prefs[fieldName].
       const filledPrompts = fillAllPrompts(promptsJson as PromptsJson, prefs);
 
       // (B) Montamos um systemMessage geral a partir de todos os blocos preenchidos:
-      //     (observe que generateFromPrompt espera receber o filledPrompts
-      //     para concatenar os blocos já preenchidos + instruções adicionais.)
+      //     o generateFromPrompt recebe esse filledPrompts para concatenar + instruções extras.
       //
-      // Opcionalmente, se você quiser um comportamento “diferente” ao usar somente prefs,
-      // basta trocar a chamada a generateFromPrompt por outro prompt genérico.
-      //
-      // Aqui vamos pedir categorias + extraIdeas:
+      // Aqui, vamos pedir categorias + extraIdeas:
       const systemMessagePrefs = filledPrompts.blocks
         .map((blk) => blk.prompt.trim())
         .join("\n\n");
@@ -255,7 +287,9 @@ A partir dessas preferências, gere um JSON estruturado contendo:
 1) "categories": lista de categorias (campo "name") e, dentro de cada categoria, um array "ideas" com objetos de ideias (mesmos campos de id, title, description, isFavorite, etc.);
 2) "extraIdeas": lista de objetos de ideias independentes (id, title, description, isFavorite, etc.).
 
-Não inclua explicações fora do JSON. Obedeça a estrutura exatamente:
+**Use APENAS aspas duplas ASCII (\"), sem aspas curvas (“ ”), e não inclua texto fora da estrutura JSON.**
+
+Obedeça a estrutura exatamente:
 {
   "categories": [
     {
@@ -303,18 +337,23 @@ Gere as categorias e ideias conforme as instruções acima.
           { role: "system", content: systemMessageWithPrefsInstructions },
           { role: "user", content: userMessagePrefs },
         ],
-        temperature: 0.7,
+        temperature: 1,
+        max_tokens: 2048,
       });
 
-      const text = chatResponse.choices?.[0]?.message?.content || "";
+      // Processamento da resposta JSON do prefs (mesma lógica de limpeza):
+      const rawText = chatResponse.choices?.[0]?.message?.content || "";
+      const cleanedPrefs = rawText
+        .replace(/[“”]/g, '"')
+        .replace(/‘|’/g, "'");
       let parsedPrefs: any;
       try {
-        parsedPrefs = JSON.parse(text);
+        parsedPrefs = JSON.parse(cleanedPrefs);
       } catch (err) {
-        console.error("Erro ao converter resposta da OpenAI em JSON (prefs):", text);
+        console.error("Falha ao converter resposta da OpenAI em JSON (prefs):", cleanedPrefs);
         throw new Error(
-          "Falha ao processar a resposta da OpenAI como JSON válido. Conteúdo recebido: " +
-            text
+          "Falha ao processar a resposta da OpenAI como JSON válido. Conteúdo recebido:\n" +
+          cleanedPrefs
         );
       }
 
@@ -336,15 +375,11 @@ Gere as categorias e ideias conforme as instruções acima.
         };
       };
 
-      // Vamos supor que o usuário queira usar o mesmo “promptsJson” preenchido com dados default,
-      // ou então passo um objeto vazio para não quebrar fillAllPrompts:
-      // (se você tiver um jeito de saber qual “prefs” usar aqui, pode passar as prefs certas)
+      // Usa um objeto vazio para preencher promptsJson, caso não haja prefs.
       const dummyPrefs: PreferencesData = {} as any;
 
       // (A) Preenchemos o promptsJson “cru” usando um objeto vazio (ou padrão)
       const filledPrompts = fillAllPrompts(promptsJson as PromptsJson, dummyPrefs);
-      console.log(">>> filledPrompts:", JSON.stringify(filledPrompts, null, 2));
-
 
       // (B) Definimos se é categorizado ou não:
       const isCategorized = options?.categorized ?? false;
@@ -352,14 +387,18 @@ Gere as categorias e ideias conforme as instruções acima.
 
       // (C) Chamamos nossa função geradora, que concatena todos os blocos preenchidos
       //     + instruções extras para gerar output JSON de “ideas” ou “categories”.
-      const results = await generateFromPrompt(prompt, {
-        categorized: isCategorized,
-        platform: options?.platform,
-        format: options?.format,
-        tone: options?.tone,
-        audience: options?.audience,
-        count: promptCount,
-      }, filledPrompts);
+      const results = await generateFromPrompt(
+        prompt,
+        {
+          categorized: isCategorized,
+          platform: options?.platform,
+          format: options?.format,
+          tone: options?.tone,
+          audience: options?.audience,
+          count: promptCount,
+        },
+        filledPrompts
+      );
 
       if (isCategorized) {
         return NextResponse.json({

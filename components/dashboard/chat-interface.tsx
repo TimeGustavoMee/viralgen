@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Sparkles, Send, Zap, Loader2, X, Lightbulb } from "lucide-react";
+import { Sparkles, Send, Loader2, X, Lightbulb, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,7 +18,10 @@ import {
   generateContentIdeas,
   generateCategorizedContent,
 } from "@/app/(private)/dashboard/chat/actions";
-import type { ContentIdea, ContentCategory } from "@/app/(private)/dashboard/chat/type";
+import type {
+  ContentIdea,
+  ContentCategory,
+} from "@/app/(private)/dashboard/chat/type";
 import { toggleFavorite, getFavorites } from "@/utils/favorites";
 
 export function ChatInterface() {
@@ -49,7 +52,7 @@ export function ChatInterface() {
     categorized: false,
   });
 
-  // Estado do histórico de chat (apenas para exibir mensagens no chat UI)
+  // Histórico de chat (para exibir mensagens na UI)
   const [chatHistory, setChatHistory] = useState<
     Array<{ type: "user" | "assistant"; content: string }>
   >([]);
@@ -58,17 +61,7 @@ export function ChatInterface() {
   // -------------------------------------------------
   // 2) ESTADOS DE “PRIMEIRO CONTATO” (BLOCO 1)
   // -------------------------------------------------
-  // Em qual etapa do bloco 1 o usuário está (0..5).
-  // 0 = mensagem de boas-vindas e pergunta “Seu nome completo:”
-  // 1 = aguardando @ do Instagram
-  // 2 = aguardando resposta “sim/​não/​um pouco”
-  // 2.5 = ajuste de nível de IA (iniciante/intermediário/avançado)
-  // 3 = confirmação de entendimento
-  // 4 = mensagem de marco (criador ativado) e instruções da Missão 1
-  // 5 = aguardando primeira ideia de conteúdo (Missão 1)
   const [firstContactStage, setFirstContactStage] = useState<number>(0);
-
-  // Dados coletados no bloco 1
   const [firstContactData, setFirstContactData] = useState<{
     name: string;
     instagram: string;
@@ -79,30 +72,12 @@ export function ChatInterface() {
     instagram: "",
     iaUsage: "",
   });
-
-  // Quando true, o primeiro contato (bloco 1) foi concluído.
   const [firstContactDone, setFirstContactDone] = useState<boolean>(false);
 
   // -------------------------------------------------
   // 3) ESTADOS DO BLOCO 4 – CONSTRUÇÃO DE AUTORIDADE E POSICIONAMENTO VIRAL
   // -------------------------------------------------
-  // Vamos criar um novo estado para controlar cada “stage” do Bloco 4.
-  //   0 = Pergunta “Qual post seu mais repercutiu até agora?”
-  //   1 = Pergunta “Como você se sentiu ao publicar esse post? E ao ver o resultado?”
-  //   2 = Pergunta “O que você acha que mais conectou com o público?”
-  //   3 = Pergunta “Você tem repetido esse tipo de conteúdo ou ainda não?”
-  //     (nesse momento, marcamos tag: nucleo_viral_identificado)
-  //   4 = Desenvolvimento de pilares: mensagem explicativa + tag: pilares_autoridade_ativos
-  //        (apenas envio de texto; a escolha de “quando quiser avançar” será capturada no next stage)
-  //   5 = Pergunta “Escolha um dos pilares (Posicionamento / Conexão / Estilo)”
-  //   6 = Monitoramento de posicionamento: instrução para “Durante a semana, observe...”
-  //        (apenas mensagem; aguardamos resposta de qual conteúdo mais impactou)
-  //   7 = Pergunta “Qual conteúdo mais impactou?” (quando usuário reporta, marcamos tag: ajuste_posicionamento_ativo)
-  //   8 = Fechamento do ciclo: mensagem final + tag: missao4_completa
-  //   null = não estamos no Bloco 4 (fluxo de geração normal)
   const [block4Stage, setBlock4Stage] = useState<number | null>(null);
-
-  // Armazenamos as respostas do usuário em cada etapa do Bloco 4
   const [block4Data, setBlock4Data] = useState<{
     viralPost?: string;
     feeling?: string;
@@ -142,7 +117,7 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
   }, [chatHistory]);
 
   // -------------------------------------------------
-  // 5) useEffect PARA CRÉDITOS (mantive como antes)
+  // 5) useEffect PARA CRÉDITOS
   // -------------------------------------------------
   useEffect(() => {
     const loadCredits = () => {
@@ -181,7 +156,6 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
   // 7) LÓGICA DO FLUXO BLOCO 1 (primeiro contato)
   // -------------------------------------------------
   async function handleFirstContactSubmit(userText: string) {
-    // Se o usuário digitar "ajuda" (ou variações), mostramos mensagem de ajuda e não avançamos de etapa:
     if (userText.trim().toLowerCase() === "ajuda") {
       setChatHistory((prev) => [
         ...prev,
@@ -242,7 +216,6 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
           respostaIA !== "sim" &&
           respostaIA !== "não" &&
           respostaIA !== "nao"
-
         ) {
           // Ambíguo → tratamos como intermediário e pedimos ajuste de nível
           setFirstContactData((prev) => ({ ...prev, iaUsage: "intermediário" }));
@@ -272,7 +245,11 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
       case 2.5:
         // Ajuste de nível: “iniciante” | “intermediário” | “avançado”
         const nivel = userText.toLowerCase();
-        if (nivel !== "iniciante" && nivel !== "intermediário" && nivel !== "avançado") {
+        if (
+          nivel !== "iniciante" &&
+          nivel !== "intermediário" &&
+          nivel !== "avançado"
+        ) {
           setChatHistory((prev) => [
             ...prev,
             {
@@ -308,7 +285,10 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
               content: `Por favor, responde “entendi” ou “não entendi”. Se você não entendeu, eu explico novamente.`,
             },
           ]);
-        } else if (confirmacao === "não entendi" || confirmacao === "nao entendi") {
+        } else if (
+          confirmacao === "não entendi" ||
+          confirmacao === "nao entendi"
+        ) {
           setChatHistory((prev) => [
             ...prev,
             {
@@ -316,9 +296,7 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
               content: `Tudo bem, vou detalhar de novo:\n\n1. Você vai me enviar ideias ou rascunhos de conteúdo (texto, imagem, vídeo) e eu vou te ajudar a refinar.\n2. Vamos passo a passo: desde encontrar o tema até otimizar o texto e a estratégia de publicação.\n3. A ideia é você sair daqui sabendo usar IA de verdade para criar posts virais.\n\nMe fala “entendi” quando fizer sentido para continuarmos.`,
             },
           ]);
-          // permanece em firstContactStage = 3
         } else {
-          ;
           setFirstContactDone(true);
           setFirstContactStage(5);
           // Ao terminar a Missão 1, iniciamos o Bloco 4 (stage 0):
@@ -335,12 +313,6 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
         }
         break;
 
-      case 5:
-        // Já recebemos a primeira ideia de conteúdo → aqui, simplesmente mostramos feedback,
-        // mas, como iniciamos o Bloco 4 no case 3, não vamos chegar aqui diretamente.
-        // Deixamos apenas para referência futura, mas, na prática, as submissões irão para handleBlock4Submit.
-        break;
-
       default:
         break;
     }
@@ -355,7 +327,6 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
 
     switch (block4Stage) {
       case 0:
-        // Resposta: “Qual post seu mais repercutiu até agora?”
         setBlock4Data((prev) => ({ ...prev, viralPost: userText }));
         setBlock4Stage(1);
         setChatHistory((prev) => [
@@ -368,7 +339,6 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
         break;
 
       case 1:
-        // Resposta: “Como você se sentiu ao publicar esse post? E ao ver o resultado?”
         setBlock4Data((prev) => ({ ...prev, feeling: userText }));
         setBlock4Stage(2);
         setChatHistory((prev) => [
@@ -381,7 +351,6 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
         break;
 
       case 2:
-        // Resposta: “O que você acha que mais conectou com o público?”
         setBlock4Data((prev) => ({ ...prev, connectionReason: userText }));
         setBlock4Stage(3);
         setChatHistory((prev) => [
@@ -394,9 +363,7 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
         break;
 
       case 3:
-        // Resposta: “Você tem repetido esse tipo de conteúdo ou ainda não?”
         setBlock4Data((prev) => ({ ...prev, repeatedContent: userText }));
-        // Tag: nucleo_viral_identificado
         setChatHistory((prev) => [
           ...prev,
           {
@@ -408,8 +375,6 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
         break;
 
       case 4:
-        // O usuário apenas disse “quando quiser avançar” (ou algo equivalente).
-        // Agora devemos perguntar sobre qual pilar quer focar.
         setBlock4Stage(7);
         setChatHistory((prev) => [
           ...prev,
@@ -420,10 +385,7 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
         ]);
         break;
 
-
       case 7:
-        // O usuário indicou “qual conteúdo mais impactou”
-        // Tag: ajuste_posicionamento_ativo
         setChatHistory((prev) => [
           ...prev,
           {
@@ -432,14 +394,12 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
           },
         ]);
         setBlock4Stage(null);
-
         break;
-
     }
   }
 
   // -------------------------------------------------
-  // 9) FLUXO “NORMAL” DE GERAÇÃO DE CONTEÚDO (já existente)
+  // 9) FLUXO “NORMAL” DE GERAÇÃO DE CONTEÚDO
   // -------------------------------------------------
   const handleNormalChatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -453,14 +413,27 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
     setChatHistory((prev) => [...prev, { type: "user", content: prompt }]);
     setChatHistory((prev) => [
       ...prev,
-      { type: "assistant", content: "Generating viral content ideas..." },
+      { type: "assistant", content: "Gerando ideias virais de conteúdo..." },
     ]);
 
     try {
       if (generationOptions.categorized) {
         console.log("Usando modo categorizado");
         const { platform, format, tone, audience, count } = generationOptions;
-        const categories = await generateCategorizedContent(prompt, {
+
+        // Embrulha o prompt do usuário com instruções de detalhamento
+        const detailedPrompt = `
+Por favor, gere cada categoria de ideias de conteúdo de forma muito extensa e detalhada, incluindo:
+1. Contexto e justificativa;
+2. Passos de implementação (enumerados em sequência);
+3. Exemplos práticos de aplicação;
+4. Sugestões de variações ou customizações;
+
+Meu prompt original foi:
+"${prompt}"
+        `.trim();
+
+        const categories = await generateCategorizedContent(detailedPrompt, {
           platform: platform !== "any" ? platform : undefined,
           format: format !== "any" ? format : undefined,
           tone,
@@ -487,8 +460,9 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
           const newHistory = [...prev];
           newHistory[newHistory.length - 1] = {
             type: "assistant",
-            content: `I've generated ${categories.length} categories of content ideas based on your prompt. Each category contains ${categories[0]?.ideas.length ?? 1
-              } idea(s).`,
+            content: `Foram geradas ${categories.length} categorias de ideias de conteúdo com base no seu prompt. Cada categoria contém ${
+              categories[0]?.ideas.length ?? 1
+            } ideia(s).`,
           };
           return newHistory;
         });
@@ -496,7 +470,20 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
         setCreditsUsed((prev) => prev + 4);
       } else {
         console.log("Usando modo normal (não categorizado)");
-        const ideas = await generateContentIdeas(prompt, {
+
+        // Embrulha o prompt do usuário com instruções de detalhamento
+        const detailedPrompt = `
+Por favor, gere cada ideia de conteúdo de forma muito extensa e detalhada, incluindo:
+1. Contexto e justificativa;
+2. Passos de implementação (enumerados em sequência);
+3. Exemplos práticos de aplicação;
+4. Sugestões de variações ou customizações;
+
+Meu prompt original foi:
+"${prompt}"
+        `.trim();
+
+        const ideas = await generateContentIdeas(detailedPrompt, {
           platform:
             generationOptions.platform !== "any"
               ? generationOptions.platform
@@ -526,7 +513,7 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
           const newHistory = [...prev];
           newHistory[newHistory.length - 1] = {
             type: "assistant",
-            content: `I've generated ${ideas.length} viral content ideas based on your prompt. Each idea includes detailed information to help you create engaging content.`,
+            content: `Foram geradas ${ideas.length} ideias virais de conteúdo com base no seu prompt. Cada ideia inclui informações detalhadas para ajudar na criação de conteúdo.`,
           };
           return newHistory;
         });
@@ -535,27 +522,27 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
       }
 
       toast({
-        title: "Ideas Generated!",
-        description: `Viral content ideas have been created for você.`,
+        title: "Ideias Geradas!",
+        description: `Ideias virais de conteúdo foram criadas para você.`,
       });
     } catch (err) {
-      console.error("Error generating content:", err);
-      setError("Failed to generate content ideas. Please try again.");
+      console.error("Erro ao gerar conteúdo:", err);
+      setError("Falha ao gerar ideias de conteúdo. Tente novamente.");
 
       setChatHistory((prev) => {
         const newHistory = [...prev];
         newHistory[newHistory.length - 1] = {
           type: "assistant",
           content:
-            "I'm sorry, I encountered an error while generating content ideas. Please try again.",
+            "Desculpe, ocorreu um erro ao gerar as ideias de conteúdo. Tente novamente.",
         };
         return newHistory;
       });
 
       toast({
-        title: "Generation Failed",
+        title: "Geração Falhou",
         description:
-          "There was an error generating your content ideas. Please try again.",
+          "Houve um erro ao gerar suas ideias de conteúdo. Tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -565,16 +552,20 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
   };
 
   // -------------------------------------------------
-  // 10) Demais handlers (favoritar, selecionar prompt, clear results)
+  // 10) handleToggleFavorite (corrigido para preservar todos os campos)
   // -------------------------------------------------
   const handleToggleFavorite = (idea: ContentIdea) => {
-    const updatedIdea = toggleFavorite(idea);
+    // Inverte apenas o campo isFavorite, mantém todos os outros campos
+    const updatedIdea: ContentIdea = toggleFavorite(idea);
 
+    // Atualiza a lista simples de contentIdeas (modo não categorizado)
     if (contentIdeas.length > 0) {
       setContentIdeas((ideas) =>
         ideas.map((i) => (i.id === idea.id ? updatedIdea : i))
       );
     }
+
+    // Atualiza em categorizedContent, preservando todos os campos em cada ideia
     if (categorizedContent.length > 0) {
       setCategorizedContent((categories) =>
         categories.map((category) => ({
@@ -587,13 +578,18 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
     }
 
     toast({
-      title: updatedIdea.isFavorite ? "Added to favorites" : "Removed from favorites",
+      title: updatedIdea.isFavorite
+        ? "Adicionado aos favoritos"
+        : "Removido dos favoritos",
       description: updatedIdea.isFavorite
-        ? "Content idea saved to your favorites."
-        : "Content idea removed from your favorites.",
+        ? "A ideia de conteúdo foi salva em seus favoritos."
+        : "A ideia de conteúdo foi removida dos seus favoritos.",
     });
   };
 
+  // -------------------------------------------------
+  // 11) Outros handlers
+  // -------------------------------------------------
   const handleSelectPrompt = (selectedPrompt: string) => {
     setPrompt(selectedPrompt);
   };
@@ -604,11 +600,12 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
   };
 
   // -------------------------------------------------
-  // 11) RENDER (JSX)
+  // 12) RENDER (JSX)
   // -------------------------------------------------
   return (
     <Card className="border-2 border-primary/20 rounded-xl shadow-md overflow-hidden">
       <CardContent className="p-6">
+        {/* Cabeçalho */}
         <div className="mb-6">
           <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-secondary" />
@@ -618,13 +615,13 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
             {firstContactDone && block4Stage === null
               ? "Conteúdos virais prontos para sua estratégia!"
               : !firstContactDone
-                ? "Vamos começar com sua ativação no VIRALGEN"
-                : "Estamos construindo sua autoridade e posicionamento viral"}
+              ? "Vamos começar com sua ativação no VIRALGEN"
+              : "Estamos construindo sua autoridade e posicionamento viral"}
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Chat e Input */}
+          {/* Coluna principal: Chat + Input */}
           <div className="lg:col-span-2 space-y-4">
             {/* Histórico de Chat */}
             <div className="rounded-xl border-2 border-primary/10 bg-card p-4 h-[300px] overflow-y-auto">
@@ -633,13 +630,16 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
                   {chatHistory.map((message, index) => (
                     <div
                       key={index}
-                      className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}
+                      className={`flex ${
+                        message.type === "user" ? "justify-end" : "justify-start"
+                      }`}
                     >
                       <div
-                        className={`max-w-[80%] rounded-xl p-3 whitespace-pre-wrap ${message.type === "user"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted"
-                          }`}
+                        className={`max-w-[80%] rounded-xl p-3 whitespace-pre-wrap ${
+                          message.type === "user"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted"
+                        }`}
                       >
                         {message.content}
                       </div>
@@ -657,14 +657,14 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
                     {!firstContactDone
                       ? "Responda às perguntas para ativar seu perfil."
                       : block4Stage !== null
-                        ? "Siga as instruções para evoluir sua autoridade e posicionamento."
-                        : "Peça ideias de conteúdo ou comece a conversa aqui."}
+                      ? "Siga as instruções para evoluir sua autoridade e posicionamento."
+                      : "Peça ideias de conteúdo ou comece a conversa aqui."}
                   </p>
                 </div>
               )}
             </div>
 
-            {/* Se o Bloco 1 já terminou e o Bloco 4 estiver concluído, mostramos prompts sugeridos e opções */}
+            {/* Se Bloco 1 concluído e Bloco 4 finalizado, mostramos prompts sugeridos e opções */}
             {firstContactDone && block4Stage === null && (
               <>
                 <SuggestedPrompts onSelectPrompt={handleSelectPrompt} />
@@ -684,8 +684,8 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
                     !firstContactDone
                       ? "Digite aqui sua resposta..."
                       : block4Stage !== null
-                        ? "Digite aqui sua resposta para continuar o Bloco 4..."
-                        : "O que você precisa hoje?"
+                      ? "Digite aqui sua resposta para continuar o Bloco 4..."
+                      : "O que você precisa hoje?"
                   }
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
@@ -742,7 +742,7 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
             </form>
           </div>
 
-          {/* Seção de Resultados */}
+          {/* Coluna de Resultados */}
           <div className="lg:col-span-1">
             <div className="rounded-xl border-2 border-primary/10 bg-card p-4 h-full">
               <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
@@ -750,8 +750,8 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
                 {!firstContactDone
                   ? "Bem‐vind@ ao VIRALGEN"
                   : block4Stage !== null
-                    ? "Bloco 4: Autoridade e Posicionamento"
-                    : "Generated Ideas"}
+                  ? "Bloco 4: Autoridade e Posicionamento"
+                  : "Generated Ideas"}
               </h3>
 
               {!firstContactDone ? (
@@ -769,7 +769,7 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
                   </p>
                 </div>
               ) : block4Stage !== null ? (
-                // Durante o Bloco 4, mostra apenas histórico (não há “resultados de geração”)
+                // Durante o Bloco 4, mostra apenas histórico
                 <div className="flex flex-col items-center justify-center h-[400px] text-center">
                   <p className="text-muted-foreground">
                     Continue respondendo as instruções para concluir o Bloco 4.
@@ -783,7 +783,7 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
                     <div className="absolute inset-0 rounded-full border-4 border-t-secondary animate-spin"></div>
                   </div>
                   <p className="mt-4 text-muted-foreground">
-                    Generating viral content ideas...
+                    Gerando ideias virais de conteúdo...
                   </p>
                 </div>
               ) : error ? (
@@ -795,10 +795,11 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
                     className="mt-2"
                     onClick={() => setError(null)}
                   >
-                    Try Again
+                    Tentar Novamente
                   </Button>
                 </div>
               ) : generationOptions.categorized ? (
+                // Modo categorizado
                 categorizedContent.length > 0 ? (
                   <div className="overflow-y-auto max-h-[600px] pr-2">
                     <CategorizedContent
@@ -812,14 +813,15 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
                       <Sparkles className="h-8 w-8 text-secondary" />
                     </div>
                     <h3 className="text-lg font-medium mb-2">
-                      No Categories Generated Yet
+                      Nenhuma categoria gerada ainda
                     </h3>
                     <p className="text-muted-foreground max-w-md">
-                      After submitting a prompt in categorized mode, you’ll see categories here.
+                      Após submeter um prompt em modo categorizado, você verá as categorias aqui.
                     </p>
                   </div>
                 )
               ) : contentIdeas.length > 0 ? (
+                // Modo não categorizado
                 <div className="space-y-4 overflow-y-auto max-h-[600px] pr-2">
                   {contentIdeas.map((idea, index) => (
                     <motion.div
@@ -841,11 +843,10 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
                     <Sparkles className="h-8 w-8 text-secondary" />
                   </div>
                   <h3 className="text-lg font-medium mb-2">
-                    No Ideas Generated Yet
+                    Nenhuma ideia gerada ainda
                   </h3>
                   <p className="text-muted-foreground max-w-md">
-                    Enter a prompt and click generate to create viral content ideas
-                    for your business.
+                    Digite um prompt e clique em gerar para criar ideias virais de conteúdo para o seu negócio.
                   </p>
                 </div>
               )}
@@ -854,6 +855,5 @@ Eu sou o Agente Viral, seu assistente pessoal. Estou aqui pra te guiar passo a p
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
-;

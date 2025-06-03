@@ -1,19 +1,24 @@
-"use client"
+// src/components/dashboard/categorized-content.tsx
 
-import { useState } from "react"
-import { ContentIdeaCard } from "@/components/dashboard/content-idea-card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
-import { motion } from "framer-motion"
-import { ContentCategory, ContentIdea } from "@/app/(private)/dashboard/chat/type"
+"use client";
+
+import { useState } from "react";
+import { ContentIdeaCard } from "@/components/dashboard/content-idea-card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { motion } from "framer-motion";
+import type { ContentCategory, ContentIdea } from "@/app/(private)/dashboard/chat/type";
 
 interface CategorizedContentProps {
-  categories: ContentCategory[]
-  onToggleFavorite: (idea: ContentIdea) => void
+  categories: ContentCategory[];
+  onToggleFavorite: (idea: ContentIdea) => void;
 }
 
-export function CategorizedContent({ categories, onToggleFavorite }: CategorizedContentProps) {
-  const [activeTab, setActiveTab] = useState(categories[0]?.name || "")
+export function CategorizedContent({
+  categories,
+  onToggleFavorite,
+}: CategorizedContentProps) {
+  const [activeTab, setActiveTab] = useState(categories[0]?.name || "");
 
   return (
     <div className="space-y-4">
@@ -35,7 +40,7 @@ export function CategorizedContent({ categories, onToggleFavorite }: Categorized
 
         {categories.map((category) => (
           <TabsContent key={category.name} value={category.name} className="mt-4">
-            <div className="grid gap-4">
+            <div className="space-y-4">
               {category.ideas.map((idea, index) => (
                 <motion.div
                   key={idea.id}
@@ -51,5 +56,5 @@ export function CategorizedContent({ categories, onToggleFavorite }: Categorized
         ))}
       </Tabs>
     </div>
-  )
+  );
 }
