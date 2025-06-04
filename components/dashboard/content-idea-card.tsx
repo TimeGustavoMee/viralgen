@@ -62,15 +62,19 @@ export function ContentIdeaCard({
     idea.difficulty === "easy"
       ? "bg-green-500/10 text-green-500 border-green-500/20"
       : idea.difficulty === "medium"
-        ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
-        : "bg-red-500/10 text-red-500 border-red-500/20";
+      ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
+      : "bg-red-500/10 text-red-500 border-red-500/20";
+
+  // Normalize estimatedEngagement to string
+  const engagementStr: string =
+    idea.estimatedEngagement != null ? String(idea.estimatedEngagement) : "";
 
   // Determine engagement color
-  const engagementColor = idea.estimatedEngagement?.includes("High")
+  const engagementColor = engagementStr.includes("High")
     ? "bg-green-500/10 text-green-500 border-green-500/20"
-    : idea.estimatedEngagement?.includes("Medium")
-      ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
-      : "bg-blue-500/10 text-blue-500 border-blue-500/20";
+    : engagementStr.includes("Medium")
+    ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
+    : "bg-blue-500/10 text-blue-500 border-blue-500/20";
 
   // If compact mode: only title, description (clamped), favorite + copy
   if (compact) {
@@ -89,8 +93,9 @@ export function ContentIdeaCard({
                     onClick={() => onToggleFavorite(idea)}
                   >
                     <Heart
-                      className={`h-4 w-4 ${idea.isFavorite ? "fill-secondary text-secondary" : ""
-                        }`}
+                      className={`h-4 w-4 ${
+                        idea.isFavorite ? "fill-secondary text-secondary" : ""
+                      }`}
                     />
                     <span className="sr-only">Favorite</span>
                   </Button>
@@ -112,7 +117,7 @@ export function ContentIdeaCard({
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 rounded-full"
-                    onClick={() => copyToClipboard(idea.description)}
+                    onClick={() => copyToClipboard(idea.description || "")}
                   >
                     <Copy className="h-4 w-4" />
                     <span className="sr-only">Copy</span>
@@ -125,9 +130,7 @@ export function ContentIdeaCard({
             </TooltipProvider>
           </div>
         </div>
-        <p className="text-muted-foreground line-clamp-3">
-          {idea.description}
-        </p>
+        <p className="text-muted-foreground line-clamp-3">{idea.description}</p>
       </div>
     );
   }
@@ -172,8 +175,9 @@ export function ContentIdeaCard({
                   onClick={() => onToggleFavorite(idea)}
                 >
                   <Heart
-                    className={`h-4 w-4 ${idea.isFavorite ? "fill-secondary text-secondary" : ""
-                      }`}
+                    className={`h-4 w-4 ${
+                      idea.isFavorite ? "fill-secondary text-secondary" : ""
+                    }`}
                   />
                   <span className="sr-only">Favorite</span>
                 </Button>
@@ -196,7 +200,7 @@ export function ContentIdeaCard({
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 rounded-full"
-                  onClick={() => copyToClipboard(idea.description)}
+                  onClick={() => copyToClipboard(idea.description || "")}
                 >
                   <Copy className="h-4 w-4" />
                   <span className="sr-only">Copy</span>
@@ -247,8 +251,8 @@ export function ContentIdeaCard({
             {idea.difficulty === "easy"
               ? "Easy to Create"
               : idea.difficulty === "medium"
-                ? "Medium Difficulty"
-                : "Advanced"}
+              ? "Medium Difficulty"
+              : "Advanced"}
           </Badge>
         )}
 
@@ -294,18 +298,22 @@ export function ContentIdeaCard({
             className="overflow-hidden"
           >
             <div className="pt-3 border-t mt-3 space-y-4 text-gray-600 dark:text-white">
-              {/* Contexto & Justificativa */}
+              {/* Context & Justification */}
               {idea.context && (
                 <div>
-                  <h5 className="text-sm font-medium mb-2">Context & Justification</h5>
+                  <h5 className="text-sm font-medium mb-2">
+                    Context & Justification
+                  </h5>
                   <p className="text-sm whitespace-pre-wrap">{idea.context}</p>
                 </div>
               )}
 
-              {/* Passos de Implementação */}
+              {/* Implementation Steps */}
               {idea.steps && idea.steps.length > 0 && (
                 <div>
-                  <h5 className="text-sm font-medium mb-2">Implementation Steps</h5>
+                  <h5 className="text-sm font-medium mb-2">
+                    Implementation Steps
+                  </h5>
                   <ol className="list-decimal list-inside space-y-1 ml-4 text-sm">
                     {idea.steps.map((step, idx) => (
                       <li key={idx}>{step}</li>
@@ -314,10 +322,12 @@ export function ContentIdeaCard({
                 </div>
               )}
 
-              {/* Exemplos Práticos */}
+              {/* Practical Examples */}
               {idea.examples && idea.examples.length > 0 && (
                 <div>
-                  <h5 className="text-sm font-medium mb-2">Practical Examples</h5>
+                  <h5 className="text-sm font-medium mb-2">
+                    Practical Examples
+                  </h5>
                   <ul className="list-disc list-inside space-y-1 ml-4 text-sm">
                     {idea.examples.map((ex, idx) => (
                       <li key={idx}>{ex}</li>
@@ -326,10 +336,12 @@ export function ContentIdeaCard({
                 </div>
               )}
 
-              {/* Variations & Customizações */}
+              {/* Content Variations */}
               {idea.variations && idea.variations.length > 0 && (
                 <div>
-                  <h5 className="text-sm font-medium mb-2">Content Variations</h5>
+                  <h5 className="text-sm font-medium mb-2">
+                    Content Variations
+                  </h5>
                   <ul className="space-y-2 ml-4 text-sm">
                     {idea.variations.map((variation, index) => (
                       <li key={index} className="flex items-start gap-2">
@@ -343,7 +355,7 @@ export function ContentIdeaCard({
                 </div>
               )}
 
-              {/* Tags (Hashtags) */}
+              {/* Suggested Hashtags */}
               {idea.tags && idea.tags.length > 0 && (
                 <div>
                   <h5 className="text-sm font-medium mb-2 flex items-center">
