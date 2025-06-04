@@ -1,5 +1,8 @@
-// /utils/fillPrompts.ts
+"use server";
 
+import { getPref } from "@/app/(private)/dashboard/settings/actions";
+
+// Tipos de bloco e JSON de prompts
 export interface PromptsBlock {
   id: number;
   name: string;
@@ -10,29 +13,23 @@ export interface PromptsJson {
   blocks: PromptsBlock[];
 }
 
-// Whatever shape your backend returns:
-// for example, { businessName: "Acme Co", industry: "Fashion", ... }
-export type VariablesObject = Record<string, string | string[] | boolean | { [k: string]: boolean }>;
+// Tipo genérico para substituição de variáveis
+export type VariablesObject = Record<
+  string,
+  string | string[] | boolean | { [k: string]: boolean }
+>;
 
 /**
- * Given a single prompt string (e.g. containing "{businessName}" / "{industry}" / etc.),
- * replaces _all_ occurrences of "{key}" with `variables[key]`.
+ * Substitui variáveis dentro de um template no formato {variavel}.
  */
-export function fillTemplate(
+export async function fillTemplate(
   template: string,
   variables: VariablesObject
-): string {
-  // This regex matches {someKey}, capturing "someKey" in group 1.
-  // It will replace every occurrence in the template.
+): Promise<string> {
   return template.replace(/\{([^}]+)\}/g, (_, key) => {
     const value = variables[key];
-    if (value === undefined || value === null) {
-      // If no value is provided, leave the token unchanged or return empty string:
-      // return `{${key}}`; 
-      return "";
-    }
+    if (value === undefined || value === null) return "";
 
-    // If the variable is an array, join by commas; if boolean or object, coerce to JSON/string.
     if (Array.isArray(value)) {
       return value.join(", ");
     } else if (typeof value === "object") {
@@ -44,17 +41,72 @@ export function fillTemplate(
 }
 
 /**
- * Takes your entire promptsJson (with blocks[]), plus a variables object,
- * and returns a brand-new array of blocks where each block.prompt is “filled in.”
+ * Substitui variáveis em todos os blocos de um objeto `promptsJson`.
  */
-export function fillAllPrompts(
+export async function fillAllPrompts(
   promptsJson: PromptsJson,
   variables: VariablesObject
-): PromptsJson {
-  return {
-    blocks: promptsJson.blocks.map((block) => ({
+): Promise<PromptsJson> {
+  const blocks = await Promise.all(
+    promptsJson.blocks.map(async (block) => ({
       ...block,
-      prompt: fillTemplate(block.prompt, variables),
-    })),
+      prompt: await fillTemplate(block.prompt, variables),
+    }))
+  );
+
+  return { blocks };
+}
+
+/**
+ * Wrapper principal: busca preferências do usuário e retorna prompts com variáveis substituídas.
+ */
+export async function generateFilledPrompts(
+  userId: string
+): Promise<PromptsJson | { error: any }> {
+  const prefs = await getPref(userId);
+
+  if ("error" in prefs) {
+    return { error: prefs.error };
+  }
+
+  const variables: VariablesObject = {
+    businessName: prefs.businessInfo?.business_name || "",
+    businessType: prefs.businessInfo?.business_type || "",
+    industry: prefs.businessInfo?.industry || "",
+    niche: prefs.businessInfo?.niche || "",
+    businessSize: prefs.businessInfo?.business_size || "",
+    yearsInBusiness: prefs.businessInfo?.years_in_business || "",
+    website: prefs.businessInfo?.website || "",
+
+    targetGender: prefs.targetAudience?.target_gender || "",
+    targetAge: prefs.targetAudience?.target_age || "",
+    targetLocation: prefs.targetAudience?.target_location || "",
+    targetInterests: prefs.targetAudience?.target_interests || [],
+    targetPainPoints: prefs.targetAudience?.target_pain_points || [],
+
+    contentTone: prefs.contentPreferences?.preferred_tone || "",
+    contentFormality: prefs.contentPreferences?.preferred_formality || "",
+    contentLength: prefs.contentPreferences?.preferred_length || "",
+    contentFrequency: prefs.contentPreferences?.preferred_frequency || "",
+    contentEmojis: prefs.contentPreferences?.use_emojis || false,
+    contentHashtags: prefs.contentPreferences?.use_hashtags || false,
+    contentCallToAction: prefs.contentPreferences?.cta || false,
+
+    platforms: Object.entries(prefs.platformPreferences || {})
+      .filter(([, v]) => v)
+      .map(([k]) => k)
+      .join(", "),
+
+    brandValues: prefs.brandVoice?.brand_values || [],
+    brandPersonality: prefs.brandVoice?.brand_personality || "",
+    brandDescription: prefs.brandVoice?.brand_description || "",
+
+    competitorUrls: prefs.examples?.competitor_urls || [],
+    favoriteContent: prefs.examples?.favorite_content || "",
+    contentToAvoid: prefs.examples?.content_to_avoid || "",
   };
+
+  const { promptsJson } = await import("@/app/constants/prompts");
+
+  return await fillAllPrompts(promptsJson, variables);
 }

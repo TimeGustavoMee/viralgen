@@ -7,10 +7,10 @@ import { z } from "zod";
  * Inclui os campos obrigatórios e todos os campos opcionais que podem vir na API.
  */
 export const ContentIdeaSchema = z.object({
-  id: z.string(),
-  title: z.string(),
+  id: z.string().optional(), // ID opcional, pode ser gerado pelo backend
+  title: z.string().optional(),
   description: z.string(),
-  isFavorite: z.boolean().default(false),
+  isFavorite: z.boolean().default(false).optional(),
 
   // Campos opcionais para exibição detalhada
   context: z.string().optional(),
@@ -39,6 +39,7 @@ export type ContentIdea = z.infer<typeof ContentIdeaSchema>;
 export const ContentCategorySchema = z.object({
   name: z.string(),
   ideas: z.array(ContentIdeaSchema),
+
 });
 
 export type ContentCategory = z.infer<typeof ContentCategorySchema>;
