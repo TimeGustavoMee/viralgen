@@ -114,7 +114,7 @@ A resposta deve estar em JSON puro e válido.
 
     const rawText = chatResponse.choices?.[0]?.message?.content || "";
     const cleaned = rawText.replace(/[“”]/g, '"').replace(/‘|’/g, "'");
-    console.log("Resposta da OpenAI:", cleaned);
+    //console.log("Resposta da OpenAI:", cleaned);
 
     let parsedJson;
     try {
