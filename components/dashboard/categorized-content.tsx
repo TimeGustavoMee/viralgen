@@ -7,7 +7,10 @@ import { ContentIdeaCard } from "@/components/dashboard/content-idea-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { motion } from "framer-motion";
-import type { ContentCategory, ContentIdea } from "@/app/(private)/dashboard/chat/type";
+import type {
+  ContentCategory,
+  ContentIdea,
+} from "@/app/(private)/dashboard/chat/type";
 
 interface CategorizedContentProps {
   categories: ContentCategory[];
@@ -18,7 +21,9 @@ export function CategorizedContent({
   categories,
   onToggleFavorite,
 }: CategorizedContentProps) {
-  const [activeTab, setActiveTab] = useState<string>(() => categories[0]?.name || "");
+  const [activeTab, setActiveTab] = useState<string>(
+    () => categories[0]?.name
+  );
 
   useEffect(() => {
     if (categories.length > 0) {
@@ -53,7 +58,11 @@ export function CategorizedContent({
         </ScrollArea>
 
         {categories.map((category) => (
-          <TabsContent key={category.name} value={category.name} className="mt-4">
+          <TabsContent
+            key={category.name}
+            value={category.name}
+            className="mt-4"
+          >
             <div className="space-y-4">
               {category.ideas.map((idea, index) => (
                 <motion.div
@@ -62,7 +71,10 @@ export function CategorizedContent({
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                 >
-                  <ContentIdeaCard idea={idea} onToggleFavorite={onToggleFavorite} />
+                  <ContentIdeaCard
+                    idea={idea}
+                    onToggleFavorite={onToggleFavorite}
+                  />
                 </motion.div>
               ))}
             </div>

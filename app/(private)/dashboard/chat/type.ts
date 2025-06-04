@@ -9,7 +9,7 @@ import { z } from "zod";
 export const ContentIdeaSchema = z.object({
   id: z.string().optional(), // ID opcional, pode ser gerado pelo backend
   title: z.string().optional(),
-  description: z.string(),
+  description: z.string().optional(),
   isFavorite: z.boolean().default(false).optional(),
 
   // Campos opcionais para exibição detalhada

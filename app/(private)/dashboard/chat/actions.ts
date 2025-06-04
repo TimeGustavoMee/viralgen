@@ -68,7 +68,9 @@ export async function generateContentIdeas(
     try {
       const errJson = await res.json();
       if (errJson?.error) errMsg += `: ${errJson.error}`;
+      console.error("Erro ao gerar ideias de conteúdo:", errJson);
     } catch { }
+    console.error("Erro ao gerar ideias de conteúdo:", errMsg);
     throw new Error(errMsg);
   }
 
