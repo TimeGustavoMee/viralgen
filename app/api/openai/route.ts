@@ -88,11 +88,58 @@ NUNCA inclua explicações fora do JSON.
     let userPrompt = `
 Com base neste input do usuário: "${prompt}", gere exatamente ${ideaCount} ideias de conteúdo altamente detalhadas com base nas preferências do negócio.
 
-Cada ideia deve conter:
-1. Contexto e justificativa;
-2. Passos de implementação (em ordem);
-3. Exemplos práticos;
-4. Sugestões de variações;
+⚙️ FASE 1 – DNA VIRALGEN (Criação Estratégica)
+
+Cada conteúdo deve seguir exatamente esta sequência lógica:
+
+📍 [fase1.1] GANCHO SUPREMO – O scroll killer
+
+Objetivo: parar o dedo em até 3s.
+
+Use gatilhos como: curiosidade, escassez, status, medo, antecipação.
+
+Ex: “90% das dietas fracassam. Descubra o motivo real.”
+
+📍 [fase1.2] CHOQUE DE REALIDADE – Confronto cognitivo
+
+Objetivo: gerar revolta, consciência ou alerta mental.
+
+Ex: “Você está envelhecendo 20% mais rápido por não fazer isso.”
+
+📍 [fase1.3] STORYTELLING + CONTEXTO – Conexão emocional
+
+Objetivo: ativar identificação e vínculo narrativo.
+
+Ex: “Em 2018, um brasileiro transformou R$2 mil em R$2 milhões.”
+
+📍 [fase1.4] ENTREGA DE VALOR 1 – Parte Oculta
+
+Entregue valor real, mas guarde uma peça para depois.
+
+Ex: “Passo 1: Identifique um produto com demanda oculta...”
+
+📍 [fase1.5] CTA DUPLO + BENEFÍCIO REAL
+
+Regra: 2 ações obrigatórias + uma recompensa ou benefício.
+
+Ex: “Siga + comente ‘QUERO’ para receber o checklist oculto.”
+
+📍 [fase1.6] ENTREGA DE VALOR 2 – Parte Revelada
+
+Mostre a peça final, valide autoridade, conclua com impacto.
+
+Ex: “Os 3 hacks que aumentaram meus leads em 400%.”
+
+📍 [fase1.7] CALL TO BASE (CTB 2.0)
+
+Leve o público para ambientes próprios e seguros.
+
+Ex: “Acesse a lista secreta pelo link da bio.”
+
+📍 [fase1.8] CLIFFHANGER SUPREMO – Continuidade
+
+Ex: “Amanhã eu revelo como você pode aplicar isso em 24h.”
+
 
 A resposta deve estar em JSON puro e válido.
 `.trim();
