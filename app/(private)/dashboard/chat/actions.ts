@@ -2,8 +2,7 @@
 "use client";
 
 import { z } from "zod";
-import type { ContentIdea, ContentCategory } from "./type";
-import { ContentIdeaSchema, ContentCategorySchema } from "./type";
+import type { ContentIdea } from "./type";
 
 // Utilitários para normalização (mantive o normalizeDifficulty igual ao seu)
 function normalizeDifficulty(
@@ -49,9 +48,7 @@ interface RawIdea {
 
 function sanitizeIdeas(ideas: RawIdea[]): ContentIdea[] {
   return ideas.map((idea, idx) => {
-    // 1) garante que existe um objeto “fase1”
     const rawFase1 = idea.fase1 ?? {};
-    // 2) extrai cada campo de dentro de fase1
     const fase1 = {
       ganchoSupremo: rawFase1.ganchoSupremo ?? "",
       choqueDeRealidade: rawFase1.choqueDeRealidade ?? "",
@@ -174,7 +171,7 @@ export async function generateCategorizedContent(
     count?: number;
     userId: string;
   }
-): Promise<ContentCategory[]> {
+): Promise<ContentIdea[]> {
   const { userId, ...restOptions } = options;
 
   let res: Response;
@@ -193,12 +190,12 @@ export async function generateCategorizedContent(
       }),
     });
   } catch (fetchErr) {
-    console.error("Erro de rede ao chamar /api/openai (categorizado):", fetchErr);
-    throw new Error("Não foi possível conectar ao servidor para gerar conteúdo categorizado.");
+    console.error("Erro de rede ao chamar /api/openai:", fetchErr);
+    throw new Error("Não foi possível conectar ao servidor para gerar ideias.");
   }
 
   if (!res.ok) {
-    let errMsg = `Falha ao gerar conteúdo categorizado (status ${res.status})`;
+    let errMsg = `Falha ao gerar ideias de conteúdo (status ${res.status})`;
     let errJson: any = {};
     try {
       errJson = await res.json();
@@ -211,7 +208,7 @@ export async function generateCategorizedContent(
       console.error("Não foi possível parsear JSON de erro:", parseErr);
       errMsg += ": Resposta de erro não é JSON.";
     }
-    console.error("Erro ao gerar conteúdo categorizado:", errJson);
+    console.error("Erro ao gerar ideias de conteúdo:", errJson);
     throw new Error(errMsg);
   }
 
@@ -219,30 +216,18 @@ export async function generateCategorizedContent(
   try {
     json = await res.json();
   } catch (parseErr) {
-    console.error("Erro ao parsear JSON categorizado de sucesso:", parseErr);
-    throw new Error("Resposta inválida ao gerar conteúdo categorizado.");
+    console.error("Erro ao parsear JSON de sucesso:", parseErr);
+    throw new Error("Resposta inválida ao gerar ideias de conteúdo.");
   }
 
-  // Verifica formato esperado
+  // Verifica se o JSON tem o formato esperado
   if (!json.data || !Array.isArray(json.data.ideas)) {
-    console.error("Formato de resposta categorizada inesperado:", json);
-    throw new Error("Formato de dados inesperado ao gerar conteúdo categorizado.");
+    console.error("Formato de resposta inesperado:", json);
+    throw new Error("Formato de dados inesperado ao gerar ideias.");
   }
 
   const rawIdeas = json.data.ideas;
   const sanitized = sanitizeIdeas(rawIdeas);
 
-  const categoryName =
-    typeof json.data.categoryName === "string"
-      ? json.data.categoryName
-      : "Uncategorized";
-
-  const result: ContentCategory[] = [
-    {
-      name: categoryName,
-      ideas: sanitized,
-    },
-  ];
-
-  return result;
+  return sanitized;
 }

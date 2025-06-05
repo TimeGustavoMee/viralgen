@@ -1,25 +1,20 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Sparkles, Send, Loader2, X, Lightbulb, Zap } from "lucide-react";
+import { Sparkles, Send, Loader2, X, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
-import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import { ContentIdeaCard } from "@/components/dashboard/content-idea-card";
-import { CategorizedContent } from "@/components/dashboard/categorized-content";
 import { ContentGenerationOptions } from "@/components/dashboard/content-generation-options";
 import { SuggestedPrompts } from "@/components/dashboard/suggested-prompts";
 import {
   generateContentIdeas,
   generateCategorizedContent,
 } from "@/app/(private)/dashboard/chat/actions";
-import type {
-  ContentIdea,
-  ContentCategory,
-} from "@/app/(private)/dashboard/chat/type";
+import type { ContentIdea } from "@/app/(private)/dashboard/chat/type";
 import { toggleFavorite, getFavorites } from "@/utils/favorites";
 import { useUserStore } from "@/stores/userStore";
 
@@ -27,7 +22,6 @@ export function ChatInterface() {
   const [prompt, setPrompt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [contentIdeas, setContentIdeas] = useState<ContentIdea[]>([]);
-  const [categorizedContent, setCategorizedContent] = useState<ContentCategory[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [creditsUsed, setCreditsUsed] = useState(0);
   const [generationOptions, setGenerationOptions] = useState({
@@ -42,8 +36,8 @@ export function ChatInterface() {
   const [chatHistory, setChatHistory] = useState<Array<{ type: "user" | "assistant"; content: string }>>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const [firstContactDone, setFirstContactDone] = useState<boolean>(true); // simulado como feito
-  const [block4Stage, setBlock4Stage] = useState<number | null>(null);
+  const [firstContactDone] = useState<boolean>(true);
+  const [block4Stage] = useState<number | null>(null);
   const userId = useUserStore((state) => state.user?.id);
 
   useEffect(() => {
@@ -57,85 +51,47 @@ export function ChatInterface() {
     if (!prompt.trim() || !userId) return;
 
     setContentIdeas([]);
-    setCategorizedContent([]);
     setIsLoading(true);
     setError(null);
 
-    setChatHistory((prev) => [...prev, { type: "user", content: prompt }]);
-    setChatHistory((prev) => [...prev, { type: "assistant", content: "Gerando ideias virais de conteúdo..." }]);
+    setChatHistory((prev) => [
+      ...prev,
+      { type: "user", content: prompt },
+      { type: "assistant", content: "Gerando ideias virais de conteúdo..." },
+    ]);
+
+    const detailedPrompt = `
+Por favor, gere cada ${generationOptions.categorized ? "categoria de " : ""}ideia de conteúdo de forma muito extensa e detalhada, incluindo:
+1. Contexto e justificativa;
+2. Passos de implementação (enumerados em sequência);
+3. Exemplos práticos de aplicação;
+4. Sugestões de variações ou customizações;
+
+Meu prompt original foi: "${prompt}"
+    `.trim();
 
     try {
-      if (generationOptions.categorized) {
-        const detailedPrompt = `
-Por favor, gere cada categoria de ideias de conteúdo de forma muito extensa e detalhada, incluindo:
-1. Contexto e justificativa;
-2. Passos de implementação (enumerados em sequência);
-3. Exemplos práticos de aplicação;
-4. Sugestões de variações ou customizações;
+      const generator = generationOptions.categorized ? generateCategorizedContent : generateContentIdeas;
+      const ideas = await generator(detailedPrompt, { ...generationOptions, userId });
 
-Meu prompt original foi: "${prompt}"
-        `.trim();
+      const favoriteIds = new Set(getFavorites().map((fav) => fav.id));
+      const withFavorites = ideas.map((idea) => ({
+        ...idea,
+        isFavorite: favoriteIds.has(idea.id),
+      }));
 
-        const categories = await generateCategorizedContent(detailedPrompt, {
-          ...generationOptions,
-          userId,
-        });
-        console.log("Categorias recebidas:", categories);
-        console.log("Ideias dentro da categoria:", categories[0]?.ideas);
+      setContentIdeas(withFavorites);
 
-        const favoriteIds = new Set(getFavorites().map((fav) => fav.id));
-        const withFavorites = categories.map((cat) => ({
-          ...cat,
-          ideas: cat.ideas.map((idea) => ({
-            ...idea,
-            isFavorite: favoriteIds.has(idea.id),
-          })),
-        }));
+      setChatHistory((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          type: "assistant",
+          content: `Generated ${withFavorites.length} viral content ideas based on your prompt.`,
+        };
+        return updated;
+      });
 
-        setCategorizedContent(withFavorites);
-        setChatHistory((prev) => {
-          const newHistory = [...prev];
-          newHistory[newHistory.length - 1] = {
-            type: "assistant",
-            content: `Foram geradas ${withFavorites.length} categorias de ideias de conteúdo com base no seu prompt.`,
-          };
-          return newHistory;
-        });
-        setCreditsUsed((prev) => prev + 4);
-      } else {
-        const detailedPrompt = `
-Por favor, gere cada ideia de conteúdo de forma muito extensa e detalhada, incluindo:
-1. Contexto e justificativa;
-2. Passos de implementação (enumerados em sequência);
-3. Exemplos práticos de aplicação;
-4. Sugestões de variações ou customizações;
-
-Meu prompt original foi: "${prompt}"
-        `.trim();
-
-        const ideas = await generateContentIdeas(detailedPrompt, {
-          ...generationOptions,
-          userId,
-        });
-
-        const favoriteIds = new Set(getFavorites().map((fav) => fav.id));
-        const withFavorites = ideas.map((idea) => ({
-          ...idea,
-          isFavorite: favoriteIds.has(idea.id),
-        }));
-
-        setContentIdeas(withFavorites);
-        setChatHistory((prev) => {
-          const newHistory = [...prev];
-          newHistory[newHistory.length - 1] = {
-            type: "assistant",
-            content: `Foram geradas ${ideas.length} ideias virais de conteúdo com base no seu prompt.`,
-          };
-          return newHistory;
-        });
-        setCreditsUsed((prev) => prev + 1);
-      }
-
+      setCreditsUsed((prev) => prev + (generationOptions.categorized ? 4 : 1));
       toast({ title: "Ideias Geradas!", description: "Ideias virais de conteúdo foram criadas para você." });
     } catch (err) {
       console.error("Erro ao gerar conteúdo:", err);
@@ -152,15 +108,9 @@ Meu prompt original foi: "${prompt}"
   };
 
   const handleToggleFavorite = (idea: ContentIdea) => {
-    const updatedIdea: ContentIdea = toggleFavorite(idea);
+    const updatedIdea = toggleFavorite(idea);
 
     setContentIdeas((ideas) => ideas.map((i) => (i.id === idea.id ? updatedIdea : i)));
-    setCategorizedContent((cats) =>
-      cats.map((cat) => ({
-        ...cat,
-        ideas: cat.ideas.map((i) => (i.id === idea.id ? updatedIdea : i)),
-      }))
-    );
 
     toast({
       title: updatedIdea.isFavorite ? "Adicionado aos favoritos" : "Removido dos favoritos",
@@ -171,10 +121,7 @@ Meu prompt original foi: "${prompt}"
   };
 
   const handleSelectPrompt = (selectedPrompt: string) => setPrompt(selectedPrompt);
-  const clearResults = () => {
-    setContentIdeas([]);
-    setCategorizedContent([]);
-  };
+  const clearResults = () => setContentIdeas([]);
 
   return (
     <Card className="border-2 border-primary/20 rounded-xl shadow-md overflow-hidden">
@@ -199,10 +146,11 @@ Meu prompt original foi: "${prompt}"
               <div className="space-y-4">
                 {chatHistory.map((msg, i) => (
                   <div key={i} className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[80%] rounded-xl p-3 whitespace-pre-wrap ${msg.type === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
-                      }`}>
+                    <div className={`max-w-[80%] rounded-xl p-3 whitespace-pre-wrap ${
+                      msg.type === "user"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted"
+                    }`}>
                       {msg.content}
                     </div>
                   </div>
@@ -211,12 +159,8 @@ Meu prompt original foi: "${prompt}"
               </div>
             </div>
 
-            {firstContactDone && block4Stage === null && (
-              <>
-                <SuggestedPrompts onSelectPrompt={handleSelectPrompt} />
-                <ContentGenerationOptions options={generationOptions} onOptionsChange={setGenerationOptions} />
-              </>
-            )}
+            <SuggestedPrompts onSelectPrompt={handleSelectPrompt} />
+            <ContentGenerationOptions options={generationOptions} onOptionsChange={setGenerationOptions} />
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="relative">
@@ -240,19 +184,20 @@ Meu prompt original foi: "${prompt}"
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">
                   <Zap className="inline h-4 w-4 mr-1" />
-                  {creditsUsed} Credits{creditsUsed !== 1 ? "s" : ""} used
+                  {creditsUsed} Credit{creditsUsed !== 1 ? "s" : ""}
                 </span>
 
-                {(contentIdeas.length > 0 || categorizedContent.length > 0) && (
+                {contentIdeas.length > 0 && (
                   <Button variant="ghost" size="sm" onClick={clearResults}>
                     <X className="h-4 w-4 mr-1" />
-                    Cleaer Results
+                    Clear Results
                   </Button>
                 )}
               </div>
             </form>
           </div>
 
+          {/* Coluna lateral: Resultados */}
           <div className="lg:col-span-1">
             <div className="rounded-xl border-2 border-primary/10 bg-card p-4 h-full">
               <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
@@ -269,11 +214,6 @@ Meu prompt original foi: "${prompt}"
                     Try again
                   </Button>
                 </div>
-              ) : generationOptions.categorized && categorizedContent.length > 0 ? (
-                <CategorizedContent
-                  ideas={categorizedContent.flatMap((cat) => cat.ideas)}
-                  onToggleFavorite={handleToggleFavorite}
-                />
               ) : contentIdeas.length > 0 ? (
                 <div className="space-y-4 overflow-y-auto max-h-[600px] pr-2">
                   {contentIdeas.map((idea, index) => (

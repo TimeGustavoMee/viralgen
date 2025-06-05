@@ -38,15 +38,5 @@ export const ContentIdeaSchema = z.object({
 
 export type ContentIdea = z.infer<typeof ContentIdeaSchema>;
 
-/**
- * Esquema para validar uma categoria de conteúdo:
- * - name: string
- * - ideas: array de ContentIdea
- */
-export const ContentCategorySchema = z.object({
-  name: z.string(),
-  ideas: z.array(ContentIdeaSchema),
 
-});
-
-export type ContentCategory = z.infer<typeof ContentCategorySchema>;
+export type ContentCategory = z.infer<typeof ContentIdeaSchema>;

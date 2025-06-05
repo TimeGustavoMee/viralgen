@@ -37,7 +37,12 @@ export async function POST(req: Request) {
 
     const { prompt, userId, options } = parsed.data;
     const isCategorized = options?.categorized ?? false;
-    const ideaCount = options?.count ?? DEFAULT_NON_CATEGORIZED_COUNT;
+    let ideaCount: number;
+    if (isCategorized) {
+      ideaCount = options?.count ?? DEFAULT_NON_CATEGORIZED_COUNT;
+    } else {
+      ideaCount = DEFAULT_NON_CATEGORIZED_COUNT;
+    }
 
     // 1. SYSTEM MESSAGE WITH INSTRUCTIONS
     const systemMessageWithInstructions = `
@@ -130,11 +135,16 @@ Ex: “Tomorrow I’ll reveal how you can apply this in 24h.”
 
 The response must be pure and valid JSON, strictly following the format described in the system message.
 `.trim();
+    if (isCategorized) {
+      if (options?.platform) userPrompt += `\nPlatform: ${options.platform}`;
+      if (options?.format) userPrompt += `\nFormat: ${options.format}`;
+      if (options?.tone) userPrompt += `\nTone: ${options.tone}`;
+      if (options?.audience) userPrompt += `\nTarget audience: ${options.audience}`;
+      if (options?.count) {
+        userPrompt += `\nNumber of ideas: ${options.count}`;
+      }
 
-    if (options?.platform) userPrompt += `\nPlatform: ${options.platform}`;
-    if (options?.format) userPrompt += `\nFormat: ${options.format}`;
-    if (options?.tone) userPrompt += `\nTone: ${options.tone}`;
-    if (options?.audience) userPrompt += `\nTarget audience: ${options.audience}`;
+    };
 
     // 3. CALL TO OPENAI
     const chatResponse = await openai.chat.completions.create({
@@ -144,11 +154,12 @@ The response must be pure and valid JSON, strictly following the format describe
         { role: "user", content: userPrompt },
       ],
       temperature: 1,
-      max_tokens: 3000,
+      max_tokens: 6000,
     });
-
+    console.log("OpenAI response:", chatResponse);
     const rawText = chatResponse.choices?.[0]?.message?.content || "";
     const cleaned = rawText.replace(/[“”]/g, '"').replace(/‘|’/g, "'");
+    console.log("Raw response from OpenAI:", rawText);
 
     let parsedJson;
     try {
@@ -161,13 +172,12 @@ The response must be pure and valid JSON, strictly following the format describe
     }
 
     console.log("Parsed JSON:", parsedJson);
-
     return NextResponse.json({
       success: true,
-      data: isCategorized
-        ? { categories: parsedJson.categories || [] }
-        : { ideas: parsedJson.ideas || [] },
-    });
+      data: {
+        ideas: parsedJson.ideas,
+      },
+    })
   } catch (err: any) {
     return NextResponse.json(
       { success: false, error: err.message || "Unknown error" },
