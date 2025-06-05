@@ -161,7 +161,7 @@ export function ContentGenerationOptions({
           />
         </div>
 
-        <div className="flex items-center space-x-2">
+        {/* <div className="flex items-center space-x-2">
           <input
             type="checkbox"
             id="categorized"
@@ -172,7 +172,7 @@ export function ContentGenerationOptions({
           <Label htmlFor="categorized">
             Generate categorized content (uses more credits)
           </Label>
-        </div>
+        </div> */}
       </CollapsibleContent>
     </Collapsible>
   )
