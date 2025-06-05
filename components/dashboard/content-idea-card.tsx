@@ -62,8 +62,8 @@ export function ContentIdeaCard({
     idea.difficulty === "easy"
       ? "bg-green-500/10 text-green-500 border-green-500/20"
       : idea.difficulty === "medium"
-      ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
-      : "bg-red-500/10 text-red-500 border-red-500/20";
+        ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
+        : "bg-red-500/10 text-red-500 border-red-500/20";
 
   // Normalize estimatedEngagement to string
   const engagementStr: string =
@@ -73,8 +73,8 @@ export function ContentIdeaCard({
   const engagementColor = engagementStr.includes("High")
     ? "bg-green-500/10 text-green-500 border-green-500/20"
     : engagementStr.includes("Medium")
-    ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
-    : "bg-blue-500/10 text-blue-500 border-blue-500/20";
+      ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
+      : "bg-blue-500/10 text-blue-500 border-blue-500/20";
 
   // Se estiver em modo “compact”, exibe só título, descrição (clamped), favorito e copiar
   if (compact) {
@@ -93,9 +93,8 @@ export function ContentIdeaCard({
                     onClick={() => onToggleFavorite(idea)}
                   >
                     <Heart
-                      className={`h-4 w-4 ${
-                        idea.isFavorite ? "fill-secondary text-secondary" : ""
-                      }`}
+                      className={`h-4 w-4 ${idea.isFavorite ? "fill-secondary text-secondary" : ""
+                        }`}
                     />
                     <span className="sr-only">Favorite</span>
                   </Button>
@@ -189,9 +188,8 @@ export function ContentIdeaCard({
                   onClick={() => onToggleFavorite(idea)}
                 >
                   <Heart
-                    className={`h-4 w-4 ${
-                      idea.isFavorite ? "fill-secondary text-secondary" : ""
-                    }`}
+                    className={`h-4 w-4 ${idea.isFavorite ? "fill-secondary text-secondary" : ""
+                      }`}
                   />
                   <span className="sr-only">Favorite</span>
                 </Button>
@@ -265,8 +263,8 @@ export function ContentIdeaCard({
             {idea.difficulty === "easy"
               ? "Easy to Create"
               : idea.difficulty === "medium"
-              ? "Medium Difficulty"
-              : "Advanced"}
+                ? "Medium Difficulty"
+                : "Advanced"}
           </Badge>
         )}
 
@@ -312,7 +310,7 @@ export function ContentIdeaCard({
             className="overflow-hidden"
           >
             <div className="pt-3 border-t mt-3 space-y-4 text-gray-600 dark:text-white">
-              
+
               {/* ─── NOVO BLOCO: DNA VIRALGEN (fase1.1–1.8) ───────────────────────── */}
               {idea.fase1 && (
                 <div>
@@ -361,7 +359,7 @@ export function ContentIdeaCard({
                     {/* Fase 1.6 – Entrega de Valor 2 */}
                     <div>
                       <h6 className="text-xs font-semibold mb-1">
-                        ENTREGA DE VALOR v2 
+                        ENTREGA DE VALOR - Parte Revelada!
                       </h6>
                       <p className="text-sm">{entregaDeValor2}</p>
                     </div>
@@ -369,7 +367,7 @@ export function ContentIdeaCard({
                     {/* Fase 1.7 – Call to Base (CTB 2.0) */}
                     <div>
                       <h6 className="text-xs font-semibold mb-1">
-                         CALL TO BASE 
+                        CALL TO BASE
                       </h6>
                       <p className="text-sm">{callToBase}</p>
                     </div>
@@ -377,7 +375,7 @@ export function ContentIdeaCard({
                     {/* Fase 1.8 – Cliffhanger Supremo */}
                     <div>
                       <h6 className="text-xs font-semibold mb-1">
-                         CLIFFHANGER SUPREMO 
+                        CLIFFHANGER SUPREMO
                       </h6>
                       <p className="text-sm">{cliffhangerSupremo}</p>
                     </div>
