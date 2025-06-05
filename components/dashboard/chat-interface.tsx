@@ -141,8 +141,8 @@ Meu prompt original foi: "${prompt}"
       console.error("Erro ao gerar conteúdo:", err);
       setError("Falha ao gerar ideias de conteúdo. Tente novamente.");
       toast({
-        title: "Geração Falhou",
-        description: "Houve um erro ao gerar suas ideias de conteúdo. Tente novamente.",
+        title: "Erro ao gerar ideias",
+        description: "Error generating content ideas. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -165,8 +165,8 @@ Meu prompt original foi: "${prompt}"
     toast({
       title: updatedIdea.isFavorite ? "Adicionado aos favoritos" : "Removido dos favoritos",
       description: updatedIdea.isFavorite
-        ? "A ideia de conteúdo foi salva em seus favoritos."
-        : "A ideia de conteúdo foi removida dos seus favoritos.",
+        ? "Content idea added to your favorites."
+        : "Content idea removed from your favorites.",
     });
   };
 
@@ -240,34 +240,33 @@ Meu prompt original foi: "${prompt}"
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">
                   <Zap className="inline h-4 w-4 mr-1" />
-                  {creditsUsed} crédito{creditsUsed !== 1 ? "s" : ""} usado
+                  {creditsUsed} Credits{creditsUsed !== 1 ? "s" : ""} used
                 </span>
 
                 {(contentIdeas.length > 0 || categorizedContent.length > 0) && (
                   <Button variant="ghost" size="sm" onClick={clearResults}>
                     <X className="h-4 w-4 mr-1" />
-                    Limpar resultados
+                    Cleaer Results
                   </Button>
                 )}
               </div>
             </form>
           </div>
 
-          {/* Coluna lateral */}
           <div className="lg:col-span-1">
             <div className="rounded-xl border-2 border-primary/10 bg-card p-4 h-full">
               <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-secondary" />
-                Resultados
+                Results
               </h3>
 
               {isLoading ? (
-                <p className="text-center text-muted-foreground">Gerando conteúdo...</p>
+                <p className="text-center text-muted-foreground">Generating content...</p>
               ) : error ? (
                 <div className="p-4 bg-red-100 text-red-700 rounded-lg">
                   <p>{error}</p>
                   <Button size="sm" onClick={() => setError(null)} className="mt-2">
-                    Tentar novamente
+                    Try again
                   </Button>
                 </div>
               ) : generationOptions.categorized && categorizedContent.length > 0 ? (
@@ -290,7 +289,7 @@ Meu prompt original foi: "${prompt}"
                 </div>
               ) : (
                 <p className="text-muted-foreground text-center">
-                  Nenhum conteúdo gerado ainda. Envie um prompt.
+                  No content ideas generated yet. Please enter a prompt and submit to see results.
                 </p>
               )}
             </div>

@@ -309,6 +309,9 @@ export function ContentIdeaCard({
             transition={{ duration: 0.3 }}
             className="overflow-hidden"
           >
+            <h5 className="text-sm font-medium mb-2">
+              VIRALGEN DNA – Strategic Creation
+            </h5>
             <div className="pt-3 border-t mt-3 space-y-4 text-gray-600 dark:text-white">
 
               {/* ─── NOVO BLOCO: DNA VIRALGEN (fase1.1–1.8) ───────────────────────── */}
@@ -319,7 +322,7 @@ export function ContentIdeaCard({
                     {/* Fase 1.1 – Gancho Supremo */}
                     <div>
                       <h6 className="text-xs font-semibold mb-1">
-                        GANCHO
+                        SUPREME HOOK – The scroll killer
                       </h6>
                       <p className="text-sm">{ganchoSupremo}</p>
                     </div>
@@ -327,7 +330,7 @@ export function ContentIdeaCard({
                     {/* Fase 1.2 – Choque de Realidade */}
                     <div>
                       <h6 className="text-xs font-semibold mb-1">
-                        CHOQUE DE REALIDADE – Confronto cognitivo
+                        REALITY SHOCK – Cognitive Confrontation
                       </h6>
                       <p className="text-sm">{choqueDeRealidade}</p>
                     </div>
@@ -335,7 +338,7 @@ export function ContentIdeaCard({
                     {/* Fase 1.3 – Storytelling + Contexto */}
                     <div>
                       <h6 className="text-xs font-semibold mb-1">
-                        STORYTELLING + CONTEXTO
+                        STORYTELLING + CONTEXT
                       </h6>
                       <p className="text-sm">{storytellingContexto}</p>
                     </div>
@@ -343,7 +346,7 @@ export function ContentIdeaCard({
                     {/* Fase 1.4 – Entrega de Valor 1 */}
                     <div>
                       <h6 className="text-xs font-semibold mb-1">
-                        ENTREGA DE VALOR 1 – Parte Oculta
+                        VALUE DELIVERY - Concealed Part!
                       </h6>
                       <p className="text-sm">{entregaDeValor1}</p>
                     </div>
@@ -351,7 +354,7 @@ export function ContentIdeaCard({
                     {/* Fase 1.5 – CTA Duplo + Benefício Real */}
                     <div>
                       <h6 className="text-xs font-semibold mb-1">
-                        CTA DUPLO + BENEFÍCIO REAL
+                        DOUNLE CTA + REAL BENEFIT
                       </h6>
                       <p className="text-sm">{ctaDuploBeneficio}</p>
                     </div>
@@ -359,7 +362,7 @@ export function ContentIdeaCard({
                     {/* Fase 1.6 – Entrega de Valor 2 */}
                     <div>
                       <h6 className="text-xs font-semibold mb-1">
-                        ENTREGA DE VALOR - Parte Revelada!
+                        VALUE DELIVERY - Revealed Part!
                       </h6>
                       <p className="text-sm">{entregaDeValor2}</p>
                     </div>
@@ -375,7 +378,7 @@ export function ContentIdeaCard({
                     {/* Fase 1.8 – Cliffhanger Supremo */}
                     <div>
                       <h6 className="text-xs font-semibold mb-1">
-                        CLIFFHANGER SUPREMO
+                        SUPREME CLIFFHANGER
                       </h6>
                       <p className="text-sm">{cliffhangerSupremo}</p>
                     </div>

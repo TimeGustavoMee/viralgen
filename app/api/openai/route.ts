@@ -5,7 +5,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import OpenAI from "openai";
-import { generateFilledPrompts } from "@/utils/fillPrompts";
 
 const requestBodySchema = z.object({
   prompt: z.string(),
@@ -40,11 +39,11 @@ export async function POST(req: Request) {
     const isCategorized = options?.categorized ?? false;
     const ideaCount = options?.count ?? DEFAULT_NON_CATEGORIZED_COUNT;
 
-    // 1. CONSTRUÇÃO DO systemMessageWithInstructions (alterado)
+    // 1. SYSTEM MESSAGE WITH INSTRUCTIONS
     const systemMessageWithInstructions = `
-Você é um assistente que **sempre retorna apenas JSON válido com aspas duplas ASCII (")**. Não adicione texto fora do JSON.
+You are an assistant that **must always return only valid JSON using ASCII double quotes (")**. Do not add any text outside the JSON.
 
-Formato esperado da resposta (exemplo de uma única ideia de conteúdo):
+Expected response format (example of a single content idea):
 {
   "ideas": [
     {
@@ -78,9 +77,9 @@ Formato esperado da resposta (exemplo de uma única ideia de conteúdo):
   ]
 }
 
-Regras:
-1. Para cada ideia, preencha todos os campos obrigatórios (id, title, description, context, steps, examples, variations, platform, format, tags, estimatedEngagement, difficulty, timeToCreate, bestTimeToPost, targetAudience, isFavorite).
-2. O objeto “fase1” deve conter exatamente essas 8 chaves: 
+Rules:
+1. For each idea, fill in all required fields (id, title, description, context, steps, examples, variations, platform, format, tags, estimatedEngagement, difficulty, timeToCreate, bestTimeToPost, targetAudience, isFavorite).
+2. The “fase1” object must contain exactly these 8 keys:
    - “ganchoSupremo”
    - “choqueDeRealidade”
    - “storytellingContexto”
@@ -89,55 +88,55 @@ Regras:
    - “entregaDeValor2”
    - “callToBase”
    - “cliffhangerSupremo”
-3. Não inclua nenhuma explicação fora do JSON. Apenas retorne o objeto JSON completo.
+3. Do not include any explanations outside the JSON. Only return the complete JSON object.
 `.trim();
 
-    // 2. CONSTRUÇÃO DO userPrompt (alterado)
+    // 2. USER PROMPT
     let userPrompt = `
-Com base neste input do usuário: "${prompt}", gere exatamente ${ideaCount} ideias de conteúdo altamente detalhadas com base nas preferências do negócio.
+Based on this user input: "${prompt}", generate exactly ${ideaCount} highly detailed content ideas based on the business preferences.
 
-Cada ideia deve seguir **exatamente** esta sequência lógica (DNA VIRALGEN – Criação Estratégica):
+Each idea must strictly follow this logical sequence (VIRALGEN DNA – Strategic Creation):
 
-📍 [fase1.1] GANCHO SUPREMO – O scroll killer  
-Objetivo: parar o dedo em até 3s. Use gatilhos como curiosidade, escassez, status ou medo.  
-Ex: “90% das dietas fracassam. Descubra o motivo real.”  
+📍 [fase1.1] ULTIMATE HOOK – The scroll killer  
+Goal: stop the scroll within 3s. Use triggers like curiosity, scarcity, status, or fear.  
+Ex: “90% of diets fail. Discover the real reason.”
 
-📍 [fase1.2] CHOQUE DE REALIDADE – Confronto cognitivo  
-Objetivo: gerar revolta, consciência ou alerta mental.  
-Ex: “Você está envelhecendo 20% mais rápido por não fazer isso.”  
+📍 [fase1.2] REALITY SHOCK – Cognitive confrontation  
+Goal: generate outrage, awareness, or a mental alert.  
+Ex: “You’re aging 20% faster by not doing this.”
 
-📍 [fase1.3] STORYTELLING + CONTEXTO – Conexão emocional  
-Objetivo: ativar identificação e vínculo narrativo.  
-Ex: “Em 2018, um brasileiro transformou R$2 mil em R$2 milhões.”  
+📍 [fase1.3] STORYTELLING + CONTEXT – Emotional connection  
+Goal: activate identification and narrative bonding.  
+Ex: “In 2018, a Brazilian turned R$2,000 into R$2 million.”
 
-📍 [fase1.4] ENTREGA DE VALOR 1 – Parte Oculta  
-Entregue valor real, mas guarde uma peça para depois.  
-Ex: “Passo 1: Identifique um produto com demanda oculta...”  
+📍 [fase1.4] VALUE DELIVERY 1 – The hidden part  
+Deliver real value, but hold one piece back.  
+Ex: “Step 1: Identify a product with hidden demand...”
 
-📍 [fase1.5] CTA DUPLO + BENEFÍCIO REAL  
-Regra: 2 ações obrigatórias + uma recompensa ou benefício.  
-Ex: “Siga + comente ‘QUERO’ para receber o checklist oculto.”  
+📍 [fase1.5] DUAL CTA + REAL BENEFIT  
+Rule: 2 mandatory actions + a reward or benefit.  
+Ex: “Follow + comment ‘WANT’ to get the hidden checklist.”
 
-📍 [fase1.6] ENTREGA DE VALOR 2 – Parte Revelada  
-Mostre a peça final, valide autoridade, conclua com impacto.  
-Ex: “Os 3 hacks que aumentaram meus leads em 400%.”  
+📍 [fase1.6] VALUE DELIVERY 2 – The revealed part  
+Show the final piece, validate authority, end with impact.  
+Ex: “The 3 hacks that increased my leads by 400%.”
 
 📍 [fase1.7] CALL TO BASE (CTB 2.0)  
-Leve o público para ambientes próprios e seguros.  
-Ex: “Acesse a lista secreta pelo link da bio.”  
+Bring the audience to your own safe environments.  
+Ex: “Access the secret list via the bio link.”
 
-📍 [fase1.8] CLIFFHANGER SUPREMO – Continuidade  
-Ex: “Amanhã eu revelo como você pode aplicar isso em 24h.”
+📍 [fase1.8] ULTIMATE CLIFFHANGER – Continuity  
+Ex: “Tomorrow I’ll reveal how you can apply this in 24h.”
 
-A resposta deve estar em JSON puro e válido, seguindo exatamente o formato descrito no systemMessage.
+The response must be pure and valid JSON, strictly following the format described in the system message.
 `.trim();
 
-    if (options?.platform) userPrompt += `\nPlataforma: ${options.platform}`;
-    if (options?.format)   userPrompt += `\nFormato: ${options.format}`;
-    if (options?.tone)     userPrompt += `\nTom: ${options.tone}`;
-    if (options?.audience) userPrompt += `\nPúblico-alvo: ${options.audience}`;
+    if (options?.platform) userPrompt += `\nPlatform: ${options.platform}`;
+    if (options?.format) userPrompt += `\nFormat: ${options.format}`;
+    if (options?.tone) userPrompt += `\nTone: ${options.tone}`;
+    if (options?.audience) userPrompt += `\nTarget audience: ${options.audience}`;
 
-    // 3. CHAMADA AO OPENAI
+    // 3. CALL TO OPENAI
     const chatResponse = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
@@ -150,16 +149,19 @@ A resposta deve estar em JSON puro e válido, seguindo exatamente o formato desc
 
     const rawText = chatResponse.choices?.[0]?.message?.content || "";
     const cleaned = rawText.replace(/[“”]/g, '"').replace(/‘|’/g, "'");
+
     let parsedJson;
     try {
       parsedJson = JSON.parse(cleaned);
     } catch (err) {
       return NextResponse.json(
-        { success: false, error: "Resposta inválida da OpenAI." },
+        { success: false, error: "Invalid response from OpenAI." },
         { status: 500 }
       );
     }
-    console.log("JSON parseado:", parsedJson);
+
+    console.log("Parsed JSON:", parsedJson);
+
     return NextResponse.json({
       success: true,
       data: isCategorized
@@ -168,7 +170,7 @@ A resposta deve estar em JSON puro e válido, seguindo exatamente o formato desc
     });
   } catch (err: any) {
     return NextResponse.json(
-      { success: false, error: err.message || "Erro desconhecido" },
+      { success: false, error: err.message || "Unknown error" },
       { status: 500 }
     );
   }
