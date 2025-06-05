@@ -76,7 +76,7 @@ export function ContentIdeaCard({
     ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
     : "bg-blue-500/10 text-blue-500 border-blue-500/20";
 
-  // If compact mode: only title, description (clamped), favorite + copy
+  // Se estiver em modo “compact”, exibe só título, descrição (clamped), favorito e copiar
   if (compact) {
     return (
       <div className="p-4 rounded-xl border-2 border-primary/10 bg-card text-card-foreground shadow-sm hover:border-primary/20 transition-all duration-300">
@@ -130,16 +130,30 @@ export function ContentIdeaCard({
             </TooltipProvider>
           </div>
         </div>
-        <p className="text-muted-foreground line-clamp-3">{idea.description}</p>
+        <p className="text-muted-foreground line-clamp-3">
+          {idea.description}
+        </p>
       </div>
     );
   }
 
-  // Full display mode
+  // FULL DISPLAY MODE
+  // -----------------------------------------------------
+
+  // ① acessar “fase1” diretamente do objeto ideia
+  const ganchoSupremo = idea.fase1.ganchoSupremo;
+  const choqueDeRealidade = idea.fase1.choqueDeRealidade;
+  const storytellingContexto = idea.fase1.storytellingContexto;
+  const entregaDeValor1 = idea.fase1.entregaDeValor1;
+  const ctaDuploBeneficio = idea.fase1.ctaDuploBeneficio;
+  const entregaDeValor2 = idea.fase1.entregaDeValor2;
+  const callToBase = idea.fase1.callToBase;
+  const cliffhangerSupremo = idea.fase1.cliffhangerSupremo;
+
   return (
     <div className="p-4 rounded-xl border-2 border-primary/10 bg-card text-card-foreground shadow-sm hover:border-primary/20 transition-all duration-300">
       {/* Header: Title + Format/Platform */}
-      <div className="flex justify-between items-start mb-2">
+      <div className="flex justify-between itemss-start mb-2">
         <div>
           <h4 className="font-medium text-lg">{idea.title}</h4>
           {(idea.format || idea.platform) && (
@@ -287,7 +301,7 @@ export function ContentIdeaCard({
         )}
       </Button>
 
-      {/* Expanded Section */}
+      {/* Expanded Section: DNA VIRALGEN + Demais Seções */}
       <AnimatePresence>
         {expanded && (
           <motion.div
@@ -298,6 +312,80 @@ export function ContentIdeaCard({
             className="overflow-hidden"
           >
             <div className="pt-3 border-t mt-3 space-y-4 text-gray-600 dark:text-white">
+              
+              {/* ─── NOVO BLOCO: DNA VIRALGEN (fase1.1–1.8) ───────────────────────── */}
+              {idea.fase1 && (
+                <div>
+
+                  <div className="space-y-3 ml-4">
+                    {/* Fase 1.1 – Gancho Supremo */}
+                    <div>
+                      <h6 className="text-xs font-semibold mb-1">
+                        GANCHO
+                      </h6>
+                      <p className="text-sm">{ganchoSupremo}</p>
+                    </div>
+
+                    {/* Fase 1.2 – Choque de Realidade */}
+                    <div>
+                      <h6 className="text-xs font-semibold mb-1">
+                        CHOQUE DE REALIDADE – Confronto cognitivo
+                      </h6>
+                      <p className="text-sm">{choqueDeRealidade}</p>
+                    </div>
+
+                    {/* Fase 1.3 – Storytelling + Contexto */}
+                    <div>
+                      <h6 className="text-xs font-semibold mb-1">
+                        STORYTELLING + CONTEXTO
+                      </h6>
+                      <p className="text-sm">{storytellingContexto}</p>
+                    </div>
+
+                    {/* Fase 1.4 – Entrega de Valor 1 */}
+                    <div>
+                      <h6 className="text-xs font-semibold mb-1">
+                        ENTREGA DE VALOR 1 – Parte Oculta
+                      </h6>
+                      <p className="text-sm">{entregaDeValor1}</p>
+                    </div>
+
+                    {/* Fase 1.5 – CTA Duplo + Benefício Real */}
+                    <div>
+                      <h6 className="text-xs font-semibold mb-1">
+                        CTA DUPLO + BENEFÍCIO REAL
+                      </h6>
+                      <p className="text-sm">{ctaDuploBeneficio}</p>
+                    </div>
+
+                    {/* Fase 1.6 – Entrega de Valor 2 */}
+                    <div>
+                      <h6 className="text-xs font-semibold mb-1">
+                        ENTREGA DE VALOR v2 
+                      </h6>
+                      <p className="text-sm">{entregaDeValor2}</p>
+                    </div>
+
+                    {/* Fase 1.7 – Call to Base (CTB 2.0) */}
+                    <div>
+                      <h6 className="text-xs font-semibold mb-1">
+                         CALL TO BASE 
+                      </h6>
+                      <p className="text-sm">{callToBase}</p>
+                    </div>
+
+                    {/* Fase 1.8 – Cliffhanger Supremo */}
+                    <div>
+                      <h6 className="text-xs font-semibold mb-1">
+                         CLIFFHANGER SUPREMO 
+                      </h6>
+                      <p className="text-sm">{cliffhangerSupremo}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {/* ──────────────────────────────────────────────────────────────── */}
+
               {/* Context & Justification */}
               {idea.context && (
                 <div>

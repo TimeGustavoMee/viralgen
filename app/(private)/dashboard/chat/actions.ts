@@ -5,7 +5,7 @@ import { z } from "zod";
 import type { ContentIdea, ContentCategory } from "./type";
 import { ContentIdeaSchema, ContentCategorySchema } from "./type";
 
-// Utilitários para normalização
+// Utilitários para normalização (mantive o normalizeDifficulty igual ao seu)
 function normalizeDifficulty(
   value: string | undefined
 ): "easy" | "medium" | "hard" | undefined {
@@ -17,26 +17,79 @@ function normalizeDifficulty(
   return undefined;
 }
 
-function sanitizeIdeas(ideas: any[]): ContentIdea[] {
-  return ideas.map((idea, idx) => ({
-    id: idea.id || `${Date.now()}-${idx}`,
-    title: idea.title ?? "Untitled Idea",
-    description: idea.description ?? "",
-    isFavorite: idea.isFavorite ?? false,
-    context: idea.context ?? "",
-    steps: Array.isArray(idea.steps) ? idea.steps : [],
-    examples: Array.isArray(idea.examples) ? idea.examples : [],
-    variations: Array.isArray(idea.variations) ? idea.variations : [],
-    format: idea.format ?? undefined,
-    platform: idea.platform ?? undefined,
-    tags: Array.isArray(idea.tags) ? idea.tags : [],
-    estimatedEngagement: idea.estimatedEngagement ?? undefined,
-    difficulty: normalizeDifficulty(idea.difficulty),
-    timeToCreate: idea.timeToCreate ?? undefined,
-    bestTimeToPost: idea.bestTimeToPost ?? undefined,
-    targetAudience: idea.targetAudience ?? undefined,
-  }));
+interface RawIdea {
+  id?: string;
+  title?: string;
+  description?: string;
+  isFavorite?: boolean;
+  context?: string;
+  steps?: unknown;
+  examples?: unknown;
+  variations?: unknown;
+  format?: string;
+  platform?: string;
+  tags?: unknown;
+  estimatedEngagement?: string;
+  difficulty?: string;
+  timeToCreate?: string;
+  bestTimeToPost?: string;
+  targetAudience?: string;
+  // adicionamos aqui o objeto inteiro que vem do backend
+  fase1?: {
+    ganchoSupremo?: string;
+    choqueDeRealidade?: string;
+    storytellingContexto?: string;
+    entregaDeValor1?: string;
+    ctaDuploBeneficio?: string;
+    entregaDeValor2?: string;
+    callToBase?: string;
+    cliffhangerSupremo?: string;
+  };
 }
+
+function sanitizeIdeas(ideas: RawIdea[]): ContentIdea[] {
+  return ideas.map((idea, idx) => {
+    // 1) garante que existe um objeto “fase1”
+    const rawFase1 = idea.fase1 ?? {};
+    // 2) extrai cada campo de dentro de fase1
+    const fase1 = {
+      ganchoSupremo: rawFase1.ganchoSupremo ?? "",
+      choqueDeRealidade: rawFase1.choqueDeRealidade ?? "",
+      storytellingContexto: rawFase1.storytellingContexto ?? "",
+      entregaDeValor1: rawFase1.entregaDeValor1 ?? "",
+      ctaDuploBeneficio: rawFase1.ctaDuploBeneficio ?? "",
+      entregaDeValor2: rawFase1.entregaDeValor2 ?? "",
+      callToBase: rawFase1.callToBase ?? "",
+      cliffhangerSupremo: rawFase1.cliffhangerSupremo ?? "",
+    };
+
+    return {
+      id: idea.id || `${Date.now()}-${idx}`,
+      title: idea.title ?? "Untitled Idea",
+      description: idea.description ?? "",
+      isFavorite: idea.isFavorite ?? false,
+
+      // **não esqueça de incluir fase1 aqui**
+      fase1,
+
+      context: idea.context ?? "",
+      steps: Array.isArray(idea.steps) ? (idea.steps as string[]) : [],
+      examples: Array.isArray(idea.examples) ? (idea.examples as string[]) : [],
+      variations: Array.isArray(idea.variations)
+        ? (idea.variations as string[])
+        : [],
+      format: idea.format ?? undefined,
+      platform: idea.platform ?? undefined,
+      tags: Array.isArray(idea.tags) ? (idea.tags as string[]) : [],
+      estimatedEngagement: idea.estimatedEngagement ?? undefined,
+      difficulty: normalizeDifficulty(idea.difficulty),
+      timeToCreate: idea.timeToCreate ?? undefined,
+      bestTimeToPost: idea.bestTimeToPost ?? undefined,
+      targetAudience: idea.targetAudience ?? undefined,
+    };
+  });
+}
+
 
 // Geração de ideias simples (não categorizadas)
 export async function generateContentIdeas(
