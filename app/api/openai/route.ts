@@ -148,13 +148,13 @@ The response must be pure and valid JSON, strictly following the format describe
 
     // 3. CALL TO OPENAI
     const chatResponse = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [
         { role: "system", content: systemMessageWithInstructions },
         { role: "user", content: userPrompt },
       ],
       temperature: 1,
-      max_tokens: 6000,
+      max_tokens: 10000,
     });
     console.log("OpenAI response:", chatResponse);
     const rawText = chatResponse.choices?.[0]?.message?.content || "";

@@ -354,7 +354,7 @@ export function ContentIdeaCard({
                     {/* Fase 1.5 – CTA Duplo + Benefício Real */}
                     <div>
                       <h6 className="text-xs font-semibold mb-1">
-                        DOUNLE CTA + REAL BENEFIT
+                        DOUBLE CTA + REAL BENEFIT
                       </h6>
                       <p className="text-sm">{ctaDuploBeneficio}</p>
                     </div>
